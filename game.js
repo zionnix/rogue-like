@@ -850,39 +850,6 @@ class Game {
         ctx.fillStyle = this.player.color;
         ctx.fillRect(px, py, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
         
-        // Indicateur de ligne de vue vers la souris
-        const targetX = Math.floor(this.camera.x + this.mousePos.x / CONFIG.CELL_SIZE);
-        const targetY = Math.floor(this.camera.y + this.mousePos.y / CONFIG.CELL_SIZE);
-        const distance = Math.hypot(targetX - this.player.x, targetY - this.player.y);
-        
-        if (distance <= (this.player.range === Infinity ? 100 : this.player.range)) {
-            const canShootThroughWalls = this.player.classType === 'mage';
-            const hasLOS = this.hasLineOfSight(this.player.x, this.player.y, targetX, targetY, canShootThroughWalls);
-            
-            // Dessiner une ligne vers la cible
-            ctx.strokeStyle = hasLOS ? 'rgba(46, 204, 113, 0.5)' : 'rgba(255, 71, 87, 0.5)';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(px + CONFIG.CELL_SIZE / 2, py + CONFIG.CELL_SIZE / 2);
-            ctx.lineTo(
-                (targetX - this.camera.x) * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2,
-                (targetY - this.camera.y) * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2
-            );
-            ctx.stroke();
-            
-            // Dessiner un cercle sur la cible
-            ctx.fillStyle = hasLOS ? 'rgba(46, 204, 113, 0.3)' : 'rgba(255, 71, 87, 0.3)';
-            ctx.beginPath();
-            ctx.arc(
-                (targetX - this.camera.x) * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2,
-                (targetY - this.camera.y) * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2,
-                CONFIG.CELL_SIZE / 2,
-                0,
-                Math.PI * 2
-            );
-            ctx.fill();
-        }
-        
         // Indicateur de portée
         if (this.player.range !== Infinity) {
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
@@ -895,6 +862,31 @@ class Game {
                 0,
                 Math.PI * 2
             );
+            ctx.stroke();
+        }
+        
+        // Indicateur de cible (cercle sur la case visée)
+        const targetX = Math.floor(this.camera.x + this.mousePos.x / CONFIG.CELL_SIZE);
+        const targetY = Math.floor(this.camera.y + this.mousePos.y / CONFIG.CELL_SIZE);
+        const distance = Math.hypot(targetX - this.player.x, targetY - this.player.y);
+        
+        if (distance <= (this.player.range === Infinity ? 100 : this.player.range)) {
+            const canShootThroughWalls = this.player.classType === 'mage';
+            const hasLOS = this.hasLineOfSight(this.player.x, this.player.y, targetX, targetY, canShootThroughWalls);
+            
+            // Dessiner un cercle sur la cible
+            ctx.fillStyle = hasLOS ? 'rgba(46, 204, 113, 0.3)' : 'rgba(255, 71, 87, 0.3)';
+            ctx.strokeStyle = hasLOS ? 'rgba(46, 204, 113, 0.8)' : 'rgba(255, 71, 87, 0.8)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(
+                (targetX - this.camera.x) * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2,
+                (targetY - this.camera.y) * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2,
+                CONFIG.CELL_SIZE / 2,
+                0,
+                Math.PI * 2
+            );
+            ctx.fill();
             ctx.stroke();
         }
     }
