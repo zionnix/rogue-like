@@ -590,6 +590,19 @@ class Game {
         // Système d'animations
         this.animations = [];
         
+        // Charger les sprites des personnages
+        this.sprites = {
+            archer: new Image(),
+            knight: new Image(),
+            mage: new Image(),
+            tank: new Image()
+        };
+        
+        this.sprites.archer.src = './pixel_art/archer.png';
+        this.sprites.knight.src = './pixel_art/knight.png';
+        this.sprites.mage.src = './pixel_art/magic_men.png';
+        this.sprites.tank.src = './pixel_art/tank.png';
+        
         this.setupEventListeners();
     }
     
@@ -669,8 +682,17 @@ class Game {
         const spawn = this.dungeon.findSpawnPoint();
         this.player = new Player(spawn.x, spawn.y, classType);
         
-        // Mettre à jour l'avatar du joueur
-        document.querySelector('.player-avatar').style.background = this.player.color;
+        // Mettre à jour l'avatar du joueur avec le sprite
+        const avatarElement = document.querySelector('.player-avatar');
+        const spriteMap = {
+            archer: 'assets/archer.png',
+            knight: 'assets/knight.png',
+            mage: 'assets/magic_men.png',
+            tank: 'assets/tank.png'
+        };
+        avatarElement.style.backgroundImage = `url('${spriteMap[classType]}')`;
+        avatarElement.style.backgroundSize = 'contain';
+        avatarElement.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';
         
         this.spawnEnemies();
         
@@ -1144,8 +1166,25 @@ class Game {
         const px = (this.player.x - this.camera.x) * CONFIG.CELL_SIZE;
         const py = (this.player.y - this.camera.y) * CONFIG.CELL_SIZE;
         
-        ctx.fillStyle = this.player.color;
-        ctx.fillRect(px, py, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
+        // Dessiner le sprite du joueur s'il est chargé, sinon carré de couleur
+        const sprite = this.sprites[this.player.classType];
+        if (sprite && sprite.complete) {
+            // Désactiver le lissage pour garder le pixel art
+            ctx.imageSmoothingEnabled = false;
+            
+            // Dessiner le sprite en l'agrandissant pour remplir la cellule
+            ctx.drawImage(
+                sprite,
+                px,
+                py,
+                CONFIG.CELL_SIZE,
+                CONFIG.CELL_SIZE
+            );
+        } else {
+            // Fallback: carré de couleur
+            ctx.fillStyle = this.player.color;
+            ctx.fillRect(px, py, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
+        }
         
         // Indicateur de portée
         if (this.player.range !== Infinity) {
