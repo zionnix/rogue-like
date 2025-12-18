@@ -1,6 +1,6 @@
 // ===== CONFIGURATION DU JEU =====
 const CONFIG = {
-    GRID_SIZE: 50,
+    GRID_SIZE: 80,
     CELL_SIZE: 48,
     SPRITE_SIZE: 80,  // Taille des sprites (personnages et ennemis)
     // Canvas et viewport seront calculés dynamiquement
@@ -78,11 +78,11 @@ class DungeonGenerator {
     }
     
     generateRooms() {
-        const numRooms = 8 + Math.floor(Math.random() * 5);
+        const numRooms = 15 + Math.floor(Math.random() * 10);
         
         for (let i = 0; i < numRooms; i++) {
-            const width = 5 + Math.floor(Math.random() * 8);
-            const height = 5 + Math.floor(Math.random() * 8);
+            const width = 6 + Math.floor(Math.random() * 10);
+            const height = 6 + Math.floor(Math.random() * 10);
             const x = 2 + Math.floor(Math.random() * (this.size - width - 4));
             const y = 2 + Math.floor(Math.random() * (this.size - height - 4));
             
@@ -292,7 +292,7 @@ class Player extends Entity {
 }
 
 class Enemy extends Entity {
-    constructor(x, y, level, zone, isBoss = false) {
+    constructor(x, y, level, zone, isBoss = false, enemyType = null) {
         const baseHealth = isBoss ? 200 : 50;
         const baseDamage = isBoss ? 30 : 10;
         
@@ -307,8 +307,20 @@ class Enemy extends Entity {
         
         this.isBoss = isBoss;
         this.zone = zone;
-        this.enemyType = Math.floor(Math.random() * 6);
         this.xpValue = isBoss ? 100 : 20;
+        
+        // Type d'ennemi: 'melee' ou 'ranged'
+        this.combatType = enemyType || (Math.random() < 0.5 ? 'melee' : 'ranged');
+        this.range = this.combatType === 'ranged' ? 4 : 1;
+        
+        // IA et mouvement
+        this.moveTimer = 0;
+        this.moveInterval = 1; // 1 case par seconde
+        this.isAggro = false;  // Est-ce que l'ennemi poursuit le joueur?
+        this.currentRoom = null;
+        
+        // Visuel
+        this.visualType = Math.floor(Math.random() * 6);
     }
 }
 
@@ -772,7 +784,7 @@ class Game {
             this.addLog('⚠️ BOSS APPARU!', 'damage');
         } else {
             // Spawner des ennemis normaux
-            const numEnemies = 5 + Math.floor(this.currentLevel / 5);
+            const numEnemies = 10 + Math.floor(this.currentLevel * 1.5);
             
             for (let i = 0; i < numEnemies; i++) {
                 const room = this.dungeon.rooms[
@@ -785,7 +797,9 @@ class Game {
                 // Ne pas spawner trop près du joueur
                 const dist = Math.hypot(x - this.player.x, y - this.player.y);
                 if (dist > 5) {
-                    this.enemies.push(new Enemy(x, y, this.currentLevel, zone));
+                    const enemy = new Enemy(x, y, this.currentLevel, zone);
+                    enemy.currentRoom = room;
+                    this.enemies.push(enemy);
                 }
             }
         }
@@ -994,23 +1008,148 @@ class Game {
         for (const enemy of this.enemies) {
             enemy.update(deltaTime);
             
-            // IA simple: attaquer si proche du joueur
+            // Trouver la salle du joueur
+            const playerRoom = this.findRoomAt(this.player.x, this.player.y);
+            const enemyRoom = this.findRoomAt(enemy.x, enemy.y);
+            
+            // Vérifier si l'ennemi voit le joueur (même salle)
+            if (playerRoom && enemyRoom && playerRoom === enemyRoom) {
+                enemy.isAggro = true;
+            }
+            
+            // Distance au joueur
             const distance = Math.hypot(
                 enemy.x - this.player.x,
                 enemy.y - this.player.y
             );
             
-            if (distance <= 1 && enemy.canAttack()) {
-                const damage = enemy.attack();
-                const killed = this.player.takeDamage(damage);
+            // Mouvement de l'ennemi
+            enemy.moveTimer += deltaTime;
+            if (enemy.moveTimer >= enemy.moveInterval) {
+                enemy.moveTimer = 0;
                 
-                this.addLog(`Vous prenez ${damage} dégâts!`, 'damage');
-                
-                if (killed) {
-                    this.gameOver();
+                if (enemy.isAggro) {
+                    // Poursuivre le joueur
+                    this.moveEnemyTowardsPlayer(enemy);
+                } else {
+                    // Mouvement aléatoire dans la salle
+                    this.moveEnemyRandomly(enemy);
+                }
+            }
+            
+            // Attaque
+            if (enemy.canAttack()) {
+                if (enemy.combatType === 'melee' && distance <= 1) {
+                    // Attaque corps à corps
+                    const damage = enemy.attack();
+                    const killed = this.player.takeDamage(damage);
+                    this.addLog(`Ennemi (mêlée) vous inflige ${damage} dégâts!`, 'damage');
+                    if (killed) this.gameOver();
+                } else if (enemy.combatType === 'ranged' && distance <= enemy.range && distance > 1) {
+                    // Attaque à distance - vérifier la ligne de vue
+                    if (this.hasLineOfSight(enemy.x, enemy.y, this.player.x, this.player.y, false)) {
+                        const damage = enemy.attack();
+                        const killed = this.player.takeDamage(damage);
+                        
+                        // Animation de projectile ennemi
+                        this.animations.push(new ProjectileAnimation(
+                            enemy.x, enemy.y,
+                            this.player.x, this.player.y,
+                            'magic',
+                            8
+                        ));
+                        
+                        this.addLog(`Ennemi (distance) vous inflige ${damage} dégâts!`, 'damage');
+                        if (killed) this.gameOver();
+                    }
                 }
             }
         }
+    }
+    
+    findRoomAt(x, y) {
+        for (const room of this.dungeon.rooms) {
+            if (x >= room.x && x < room.x + room.width &&
+                y >= room.y && y < room.y + room.height) {
+                return room;
+            }
+        }
+        return null;
+    }
+    
+    moveEnemyTowardsPlayer(enemy) {
+        const dx = Math.sign(this.player.x - enemy.x);
+        const dy = Math.sign(this.player.y - enemy.y);
+        
+        // Essayer de se déplacer vers le joueur
+        const moves = [];
+        if (dx !== 0) moves.push({ x: enemy.x + dx, y: enemy.y });
+        if (dy !== 0) moves.push({ x: enemy.x, y: enemy.y + dy });
+        
+        for (const move of moves) {
+            if (this.canEnemyMoveTo(move.x, move.y, enemy)) {
+                enemy.x = move.x;
+                enemy.y = move.y;
+                return;
+            }
+        }
+    }
+    
+    moveEnemyRandomly(enemy) {
+        const directions = [
+            { dx: 0, dy: -1 },
+            { dx: 0, dy: 1 },
+            { dx: -1, dy: 0 },
+            { dx: 1, dy: 0 }
+        ];
+        
+        // Mélanger les directions
+        for (let i = directions.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [directions[i], directions[j]] = [directions[j], directions[i]];
+        }
+        
+        for (const dir of directions) {
+            const newX = enemy.x + dir.dx;
+            const newY = enemy.y + dir.dy;
+            
+            // Rester dans la même salle
+            if (enemy.currentRoom) {
+                const room = enemy.currentRoom;
+                if (newX >= room.x && newX < room.x + room.width &&
+                    newY >= room.y && newY < room.y + room.height) {
+                    if (this.canEnemyMoveTo(newX, newY, enemy)) {
+                        enemy.x = newX;
+                        enemy.y = newY;
+                        return;
+                    }
+                }
+            }
+        }
+    }
+    
+    canEnemyMoveTo(x, y, currentEnemy) {
+        if (x < 0 || x >= CONFIG.GRID_SIZE || y < 0 || y >= CONFIG.GRID_SIZE) {
+            return false;
+        }
+        
+        if (this.dungeon.grid[y][x] === 1) {
+            return false;
+        }
+        
+        // Ne pas marcher sur le joueur
+        if (x === this.player.x && y === this.player.y) {
+            return false;
+        }
+        
+        // Ne pas marcher sur d'autres ennemis
+        for (const enemy of this.enemies) {
+            if (enemy !== currentEnemy && enemy.x === x && enemy.y === y) {
+                return false;
+            }
+        }
+        
+        return true;
     }
     
     nextLevel() {
