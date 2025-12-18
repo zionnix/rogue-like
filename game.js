@@ -300,7 +300,30 @@ class Enemy extends Entity {
         const levelInZone = ((level - 1) % CONFIG.LEVELS_PER_ZONE) + 1;
         const multiplier = 1 + (levelInZone - 1) * 0.1;
         
-        const health = Math.floor(baseHealth * multiplier);
+        // Déterminer le type d'ennemi: 'melee', 'ranged', 'tank', 'small'
+        let combatType = enemyType;
+        if (!combatType) {
+            const roll = Math.random();
+            if (roll < 0.35) {
+                combatType = 'melee';  // 35% melee
+            } else if (roll < 0.65) {
+                combatType = 'ranged'; // 30% ranged
+            } else if (roll < 0.85) {
+                combatType = 'tank';   // 20% tank
+            } else {
+                combatType = 'small';  // 15% small (rare)
+            }
+        }
+        
+        // Ajuster la vie selon le type
+        let healthMultiplier = 1;
+        if (combatType === 'tank') {
+            healthMultiplier = 2;   // 2x plus de vie
+        } else if (combatType === 'small') {
+            healthMultiplier = 0.5; // 2x moins de vie
+        }
+        
+        const health = Math.floor(baseHealth * multiplier * healthMultiplier);
         const damage = Math.floor(baseDamage * multiplier);
         
         super(x, y, health, damage, 1);
@@ -309,13 +332,14 @@ class Enemy extends Entity {
         this.zone = zone;
         this.xpValue = isBoss ? 100 : 20;
         
-        // Type d'ennemi: 'melee' ou 'ranged'
-        this.combatType = enemyType || (Math.random() < 0.5 ? 'melee' : 'ranged');
+        // Type d'ennemi
+        this.combatType = combatType;
         this.range = this.combatType === 'ranged' ? 4 : 1;
         
         // IA et mouvement
         this.moveTimer = 0;
-        this.moveInterval = 1; // 1 case par seconde
+        // Les petits monstres bougent 4x plus vite (4 cases/seconde)
+        this.moveInterval = this.combatType === 'small' ? 0.25 : 1;
         this.isAggro = false;  // Est-ce que l'ennemi poursuit le joueur?
         this.currentRoom = null;
         
@@ -1385,19 +1409,36 @@ class Game {
                     ctx.fillStyle = '#ff4757'; // Rouge vif pour le boss
                 } else if (enemy.combatType === 'ranged') {
                     ctx.fillStyle = '#9b59b6'; // Violet pour les ennemis à distance
+                } else if (enemy.combatType === 'tank') {
+                    ctx.fillStyle = '#34495e'; // Gris foncé pour les tanks
+                } else if (enemy.combatType === 'small') {
+                    ctx.fillStyle = '#27ae60'; // Vert pour les petits monstres rapides
                 } else {
                     ctx.fillStyle = '#e74c3c'; // Rouge pour les mêlée
                 }
                 
-                ctx.fillRect(ex, ey, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
+                // Taille différente pour les petits monstres
+                const enemySize = enemy.combatType === 'small' ? CONFIG.CELL_SIZE * 0.7 : CONFIG.CELL_SIZE;
+                const offsetSize = (CONFIG.CELL_SIZE - enemySize) / 2;
                 
-                // Indicateur de type (épée ou arc)
+                ctx.fillRect(ex + offsetSize, ey + offsetSize, enemySize, enemySize);
+                
+                // Indicateur de type (emoji selon le type)
                 ctx.fillStyle = '#fff';
                 ctx.font = `${Math.floor(CONFIG.CELL_SIZE * 0.4)}px Arial`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
+                
+                let enemyEmoji;
+                switch (enemy.combatType) {
+                    case 'ranged': enemyEmoji = '🏹'; break;
+                    case 'tank': enemyEmoji = '🛡️'; break;
+                    case 'small': enemyEmoji = '🐀'; break;
+                    default: enemyEmoji = '⚔️'; break;
+                }
+                
                 ctx.fillText(
-                    enemy.combatType === 'ranged' ? '🏹' : '⚔️',
+                    enemyEmoji,
                     ex + CONFIG.CELL_SIZE / 2,
                     ey + CONFIG.CELL_SIZE / 2
                 );
