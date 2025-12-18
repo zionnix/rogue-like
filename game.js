@@ -237,6 +237,13 @@ class Player extends Entity {
     }
     
     gainXP(amount) {
+        // Si amount est 'level', donner assez d'XP pour monter d'un niveau
+        if (amount === 'level') {
+            this.xp = 0;
+            this.levelUp();
+            return;
+        }
+        
         this.xp += amount;
         
         while (this.xp >= this.xpToNext) {
@@ -318,7 +325,17 @@ class Enemy extends Entity {
         
         this.isBoss = isBoss;
         this.zone = zone;
-        this.xpValue = isBoss ? 100 : 20;
+        
+        // XP selon le type d'ennemi
+        if (isBoss) {
+            this.xpValue = 'level'; // Spécial: donne un niveau complet
+        } else if (combatType === 'tank') {
+            this.xpValue = 50;
+        } else if (combatType === 'small') {
+            this.xpValue = 30;
+        } else {
+            this.xpValue = 20; // melee et ranged
+        }
         
         // Type d'ennemi
         this.combatType = combatType;
@@ -709,6 +726,32 @@ class Game {
     }
     
     setupEventListeners() {
+        // Menu principal
+        document.getElementById('play-btn').addEventListener('click', () => {
+            this.showScreen('class-selection');
+        });
+        
+        document.getElementById('lore-btn').addEventListener('click', () => {
+            this.showScreen('lore-screen');
+        });
+        
+        document.getElementById('credits-btn').addEventListener('click', () => {
+            this.showScreen('credits-screen');
+        });
+        
+        document.getElementById('quit-btn').addEventListener('click', () => {
+            window.close();
+        });
+        
+        // Boutons retour
+        document.getElementById('lore-back-btn').addEventListener('click', () => {
+            this.showScreen('main-menu');
+        });
+        
+        document.getElementById('credits-back-btn').addEventListener('click', () => {
+            this.showScreen('main-menu');
+        });
+        
         // Sélection de classe
         document.querySelectorAll('.class-card').forEach(card => {
             card.addEventListener('click', () => {
@@ -745,11 +788,11 @@ class Game {
         
         // Boutons restart
         document.getElementById('restart-btn').addEventListener('click', () => {
-            this.showScreen('class-selection');
+            this.showScreen('main-menu');
         });
         
         document.getElementById('victory-restart-btn').addEventListener('click', () => {
-            this.showScreen('class-selection');
+            this.showScreen('main-menu');
         });
     }
     

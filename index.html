@@ -11,8 +11,53 @@
 </head>
 <body>
     <div id="game-container">
+        <!-- Menu principal -->
+        <div id="main-menu" class="screen active">
+            <div class="title-screen">
+                <h1 class="game-title">DUNGEON CRAWLER</h1>
+                <p class="subtitle welcome-text">Bienvenue sur Dungeon Crawler !</p>
+                <div class="menu-buttons">
+                    <button id="play-btn" class="menu-btn">🎮 Jouer</button>
+                    <button id="lore-btn" class="menu-btn">📜 Lore</button>
+                    <button id="credits-btn" class="menu-btn">👥 Crédits</button>
+                    <button id="quit-btn" class="menu-btn quit-btn">🚪 Quitter</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Écran Lore -->
+        <div id="lore-screen" class="screen">
+            <div class="content-screen">
+                <h1>📜 L'Histoire</h1>
+                <div class="lore-text">
+                    <p>Dans un monde où les ténèbres ont envahi les terres, un héros se lève...</p>
+                    <p>Cinquante niveaux de donjons vous attendent, répartis en cinq zones mystiques.</p>
+                    <p>De la Forêt Mystique aux Cités Futuristes, affrontez des créatures de plus en plus redoutables.</p>
+                    <p>Seuls les plus braves atteindront la victoire finale...</p>
+                </div>
+                <button id="lore-back-btn" class="menu-btn">⬅️ Retour</button>
+            </div>
+        </div>
+
+        <!-- Écran Crédits -->
+        <div id="credits-screen" class="screen">
+            <div class="content-screen">
+                <h1>👥 Crédits</h1>
+                <div class="credits-text">
+                    <p><strong>Développement</strong></p>
+                    <p>Créé avec passion</p>
+                    <br>
+                    <p><strong>Assets</strong></p>
+                    <p>Pixel Art personnalisé</p>
+                    <br>
+                    <p><strong>Merci de jouer !</strong></p>
+                </div>
+                <button id="credits-back-btn" class="menu-btn">⬅️ Retour</button>
+            </div>
+        </div>
+
         <!-- Menu de sélection de classe -->
-        <div id="class-selection" class="screen active">
+        <div id="class-selection" class="screen">
             <div class="title-screen">
                 <h1 class="game-title">DUNGEON CRAWLER</h1>
                 <p class="subtitle">Choisis ta classe</p>
@@ -125,7 +170,8 @@
         <!-- Écran de victoire -->
         <div id="victory" class="screen">
             <div class="victory-content">
-                <h1>VICTOIRE!</h1>
+                <h1>🎉 VICTOIRE! 🎉</h1>
+                <p class="thanks-message">Merci d'avoir joué !</p>
                 <p>Tu as vaincu tous les donjons!</p>
                 <div id="victory-stats"></div>
                 <button id="victory-restart-btn">Rejouer</button>
