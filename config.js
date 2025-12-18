@@ -13,15 +13,10 @@ export const GAME_CONFIG = {
     GRID_SIZE: 50,              // Cases de large/haut
     
     // Taille des cellules en pixels
-    CELL_SIZE: 16,              // Pixels par case
+    CELL_SIZE: 32,              // Pixels par case (augmenté pour meilleure visibilité)
     
-    // Taille du canvas
-    CANVAS_WIDTH: 800,          // Largeur en pixels
-    CANVAS_HEIGHT: 600,         // Hauteur en pixels
-    
-    // Viewport (zone visible)
-    VIEWPORT_WIDTH: 25,         // Cases visibles en largeur
-    VIEWPORT_HEIGHT: 20,        // Cases visibles en hauteur
+    // Canvas et viewport sont maintenant calculés dynamiquement
+    // dans game.js pour s'adapter à la taille de l'écran
     
     // Niveaux
     TOTAL_LEVELS: 50,           // Nombre total de niveaux

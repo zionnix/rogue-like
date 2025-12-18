@@ -1,11 +1,8 @@
 // ===== CONFIGURATION DU JEU =====
 const CONFIG = {
     GRID_SIZE: 50,
-    CELL_SIZE: 16,
-    CANVAS_WIDTH: 800,
-    CANVAS_HEIGHT: 600,
-    VIEWPORT_WIDTH: 25,
-    VIEWPORT_HEIGHT: 20,
+    CELL_SIZE: 32,
+    // Canvas et viewport seront calculés dynamiquement
     
     TOTAL_LEVELS: 50,
     LEVELS_PER_ZONE: 10,
@@ -317,8 +314,9 @@ class Game {
         this.canvas = document.getElementById('game-canvas');
         this.ctx = this.canvas.getContext('2d');
         
-        this.canvas.width = CONFIG.CANVAS_WIDTH;
-        this.canvas.height = CONFIG.CANVAS_HEIGHT;
+        // Configuration dynamique du canvas
+        this.resizeCanvas();
+        window.addEventListener('resize', () => this.resizeCanvas());
         
         this.state = 'menu'; // menu, playing, gameover, victory
         this.currentLevel = 1;
@@ -334,6 +332,21 @@ class Game {
         this.camera = { x: 0, y: 0 };
         
         this.setupEventListeners();
+    }
+    
+    resizeCanvas() {
+        // Obtenir la taille disponible (en tenant compte du HUD et de la barre d'upgrades)
+        const hud = document.getElementById('hud');
+        const upgradesBar = document.getElementById('upgrades-bar');
+        const hudHeight = hud ? hud.offsetHeight : 80;
+        const upgradesHeight = upgradesBar ? upgradesBar.offsetHeight : 60;
+        
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight - hudHeight - upgradesHeight;
+        
+        // Calculer le viewport en fonction de la taille du canvas
+        this.viewportWidth = Math.floor(this.canvas.width / CONFIG.CELL_SIZE);
+        this.viewportHeight = Math.floor(this.canvas.height / CONFIG.CELL_SIZE);
     }
     
     setupEventListeners() {
@@ -680,12 +693,12 @@ class Game {
         
         // Mise à jour caméra
         this.camera.x = Math.max(0, Math.min(
-            this.player.x - CONFIG.VIEWPORT_WIDTH / 2,
-            CONFIG.GRID_SIZE - CONFIG.VIEWPORT_WIDTH
+            this.player.x - this.viewportWidth / 2,
+            CONFIG.GRID_SIZE - this.viewportWidth
         ));
         this.camera.y = Math.max(0, Math.min(
-            this.player.y - CONFIG.VIEWPORT_HEIGHT / 2,
-            CONFIG.GRID_SIZE - CONFIG.VIEWPORT_HEIGHT
+            this.player.y - this.viewportHeight / 2,
+            CONFIG.GRID_SIZE - this.viewportHeight
         ));
         
         // Rendu
@@ -702,8 +715,8 @@ class Game {
         const zoneColors = CONFIG.ZONES[zone].colors;
         
         // Dessiner le donjon
-        for (let y = 0; y < CONFIG.VIEWPORT_HEIGHT; y++) {
-            for (let x = 0; x < CONFIG.VIEWPORT_WIDTH; x++) {
+        for (let y = 0; y < this.viewportHeight; y++) {
+            for (let x = 0; x < this.viewportWidth; x++) {
                 const gridX = Math.floor(this.camera.x + x);
                 const gridY = Math.floor(this.camera.y + y);
                 
