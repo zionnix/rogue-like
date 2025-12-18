@@ -609,21 +609,26 @@ class Game {
     resizeCanvas() {
         // Obtenir la taille du conteneur du canvas
         const container = document.getElementById('game-canvas-container');
+        const hud = document.getElementById('hud');
+        const upgradesBar = document.getElementById('upgrades-bar');
         
-        if (container && container.offsetWidth > 0) {
-            const rect = container.getBoundingClientRect();
-            this.canvas.width = rect.width;
-            this.canvas.height = rect.height;
-        } else {
-            // Fallback avec des dimensions par défaut
-            this.canvas.width = window.innerWidth;
-            this.canvas.height = window.innerHeight - 200;
-        }
+        // Calculer la hauteur disponible
+        const hudHeight = hud ? hud.getBoundingClientRect().height : 100;
+        const upgradesHeight = upgradesBar ? upgradesBar.getBoundingClientRect().height : 80;
+        
+        const width = window.innerWidth;
+        const height = window.innerHeight - hudHeight - upgradesHeight;
+        
+        // Appliquer les dimensions au canvas
+        this.canvas.width = width;
+        this.canvas.height = Math.max(height, 300);
         
         // Calculer le viewport en fonction de la taille du canvas
         // Assurer des valeurs minimales pour éviter les erreurs
-        this.viewportWidth = Math.max(10, Math.floor(this.canvas.width / CONFIG.CELL_SIZE));
-        this.viewportHeight = Math.max(10, Math.floor(this.canvas.height / CONFIG.CELL_SIZE));
+        this.viewportWidth = Math.max(15, Math.floor(this.canvas.width / CONFIG.CELL_SIZE));
+        this.viewportHeight = Math.max(12, Math.floor(this.canvas.height / CONFIG.CELL_SIZE));
+        
+        console.log(`Canvas resized: ${this.canvas.width}x${this.canvas.height}, Viewport: ${this.viewportWidth}x${this.viewportHeight}`);
     }
     
     setupEventListeners() {
@@ -695,16 +700,21 @@ class Game {
         this.state = 'playing';
         this.showScreen('game-screen');
         
-        // Redimensionner le canvas après l'affichage de l'écran de jeu
-        setTimeout(() => this.resizeCanvas(), 100);
-        
-        this.updateHUD();
-        
-        this.addLog(`Bienvenue, ${this.player.className}!`, 'info');
-        this.addLog('Utilisez ZQSD pour vous déplacer', 'info');
-        this.addLog('Cliquez pour attaquer', 'info');
-        
-        requestAnimationFrame((time) => this.gameLoop(time));
+        // Forcer le redimensionnement du canvas après un court délai
+        // pour permettre au DOM de se mettre à jour
+        setTimeout(() => {
+            this.resizeCanvas();
+            this.updateHUD();
+            
+            this.addLog(`Bienvenue, ${this.player.className}!`, 'info');
+            this.addLog('Utilisez ZQSD pour vous déplacer', 'info');
+            this.addLog('Cliquez pour attaquer', 'info');
+            
+            // Faire un premier rendu immédiatement
+            this.render();
+            
+            requestAnimationFrame((time) => this.gameLoop(time));
+        }, 100);
     }
     
     generateLevel() {
@@ -1091,7 +1101,18 @@ class Game {
     
     render() {
         const ctx = this.ctx;
+        
+        // Vérifications de sécurité
+        if (!this.dungeon || !this.player) {
+            console.error('Dungeon ou Player non initialisé!');
+            return;
+        }
+        
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Debug: afficher un fond pour vérifier que le canvas fonctionne
+        ctx.fillStyle = '#333';
+        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
         const zone = Math.ceil(this.currentLevel / CONFIG.LEVELS_PER_ZONE);
         const zoneColors = CONFIG.ZONES[zone].colors;
