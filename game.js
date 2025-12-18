@@ -598,10 +598,10 @@ class Game {
             tank: new Image()
         };
         
-        this.sprites.archer.src = './pixel_art/archer.png';
-        this.sprites.knight.src = './pixel_art/knight.png';
-        this.sprites.mage.src = './pixel_art/magic_men.png';
-        this.sprites.tank.src = './pixel_art/tank.png';
+        this.sprites.archer.src = './pixel_art/hero/archer.png';
+        this.sprites.knight.src = './pixel_art/hero/knight.png';
+        this.sprites.mage.src = './pixel_art/hero/magic men.png';
+        this.sprites.tank.src = './pixel_art/hero/tank.png';
         
         this.setupEventListeners();
     }
@@ -610,24 +610,20 @@ class Game {
         // Obtenir la taille du conteneur du canvas
         const container = document.getElementById('game-canvas-container');
         
-        if (container) {
+        if (container && container.offsetWidth > 0) {
             const rect = container.getBoundingClientRect();
             this.canvas.width = rect.width;
             this.canvas.height = rect.height;
         } else {
-            // Fallback si le conteneur n'existe pas encore
-            const hud = document.getElementById('hud');
-            const upgradesBar = document.getElementById('upgrades-bar');
-            const hudHeight = hud ? hud.offsetHeight : 120;
-            const upgradesHeight = upgradesBar ? upgradesBar.offsetHeight : 100;
-            
+            // Fallback avec des dimensions par défaut
             this.canvas.width = window.innerWidth;
-            this.canvas.height = window.innerHeight - hudHeight - upgradesHeight;
+            this.canvas.height = window.innerHeight - 200;
         }
         
         // Calculer le viewport en fonction de la taille du canvas
-        this.viewportWidth = Math.floor(this.canvas.width / CONFIG.CELL_SIZE);
-        this.viewportHeight = Math.floor(this.canvas.height / CONFIG.CELL_SIZE);
+        // Assurer des valeurs minimales pour éviter les erreurs
+        this.viewportWidth = Math.max(10, Math.floor(this.canvas.width / CONFIG.CELL_SIZE));
+        this.viewportHeight = Math.max(10, Math.floor(this.canvas.height / CONFIG.CELL_SIZE));
     }
     
     setupEventListeners() {
@@ -685,10 +681,10 @@ class Game {
         // Mettre à jour l'avatar du joueur avec le sprite
         const avatarElement = document.querySelector('.player-avatar');
         const spriteMap = {
-            archer: 'assets/archer.png',
-            knight: 'assets/knight.png',
-            mage: 'assets/magic_men.png',
-            tank: 'assets/tank.png'
+            archer: './pixel_art/hero/archer.png',
+            knight: './pixel_art/hero/knight.png',
+            mage: './pixel_art/hero/magic men.png',
+            tank: './pixel_art/hero/tank.png'
         };
         avatarElement.style.backgroundImage = `url('${spriteMap[classType]}')`;
         avatarElement.style.backgroundSize = 'contain';
