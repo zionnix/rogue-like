@@ -1204,21 +1204,13 @@ class Game {
             if (ex >= 0 && ex < this.canvas.width && 
                 ey >= 0 && ey < this.canvas.height) {
                 
-                // Calculer le décalage pour centrer le sprite plus grand
-                const spriteOffset = (CONFIG.SPRITE_SIZE - CONFIG.CELL_SIZE) / 2;
-                
                 ctx.fillStyle = enemy.isBoss ? '#ff4757' : '#e74c3c';
-                ctx.fillRect(
-                    ex - spriteOffset, 
-                    ey - spriteOffset, 
-                    CONFIG.SPRITE_SIZE, 
-                    CONFIG.SPRITE_SIZE
-                );
+                ctx.fillRect(ex, ey, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
                 
-                // Barre de vie (centrée sur le sprite)
+                // Barre de vie
                 const healthPercent = enemy.health / enemy.maxHealth;
                 ctx.fillStyle = '#2ecc71';
-                ctx.fillRect(ex - spriteOffset, ey - spriteOffset - 6, CONFIG.SPRITE_SIZE * healthPercent, 4);
+                ctx.fillRect(ex, ey - 4, CONFIG.CELL_SIZE * healthPercent, 2);
             }
         }
         
