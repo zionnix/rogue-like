@@ -1,8 +1,7 @@
 // ===== CONFIGURATION DU JEU =====
 const CONFIG = {
     GRID_SIZE: 50,
-    CELL_SIZE: 96, // Taille triplée pour des sprites 3x plus grands
-    // Canvas et viewport seront calculés dynamiquement
+    CELL_SIZE: 32,
     
     TOTAL_LEVELS: 50,
     LEVELS_PER_ZONE: 10,
