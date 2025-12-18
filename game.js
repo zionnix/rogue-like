@@ -526,6 +526,52 @@ class Game {
         return true;
     }
     
+    // Vérifier la ligne de vue entre deux points (Bresenham's line algorithm)
+    hasLineOfSight(x0, y0, x1, y1, canShootThroughWalls = false) {
+        // Si le magicien peut tirer à travers les murs
+        if (canShootThroughWalls) {
+            return true;
+        }
+        
+        const dx = Math.abs(x1 - x0);
+        const dy = Math.abs(y1 - y0);
+        const sx = x0 < x1 ? 1 : -1;
+        const sy = y0 < y1 ? 1 : -1;
+        let err = dx - dy;
+        
+        let x = x0;
+        let y = y0;
+        
+        while (true) {
+            // Ne pas vérifier la position de départ et d'arrivée
+            if (!(x === x0 && y === y0) && !(x === x1 && y === y1)) {
+                // Vérifier si c'est un mur
+                if (x >= 0 && x < CONFIG.GRID_SIZE && y >= 0 && y < CONFIG.GRID_SIZE) {
+                    if (this.dungeon.grid[y][x] === 1) {
+                        return false; // Mur bloque la ligne de vue
+                    }
+                }
+            }
+            
+            // Arrivé à destination
+            if (x === x1 && y === y1) {
+                break;
+            }
+            
+            const e2 = 2 * err;
+            if (e2 > -dy) {
+                err -= dy;
+                x += sx;
+            }
+            if (e2 < dx) {
+                err += dx;
+                y += sy;
+            }
+        }
+        
+        return true;
+    }
+    
     handlePlayerAttack(e) {
         if (!this.player.canAttack()) return;
         
@@ -540,6 +586,14 @@ class Game {
         const distance = Math.hypot(targetX - this.player.x, targetY - this.player.y);
         
         if (this.player.range === Infinity || distance <= this.player.range) {
+            // Vérifier la ligne de vue (le magicien peut tirer à travers les murs)
+            const canShootThroughWalls = this.player.classType === 'mage';
+            
+            if (!this.hasLineOfSight(this.player.x, this.player.y, targetX, targetY, canShootThroughWalls)) {
+                this.addLog('Pas de ligne de vue!', 'info');
+                return;
+            }
+            
             // Chercher un ennemi à cette position
             const target = this.enemies.find(e => 
                 e.x === targetX && e.y === targetY
@@ -795,6 +849,39 @@ class Game {
         
         ctx.fillStyle = this.player.color;
         ctx.fillRect(px, py, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
+        
+        // Indicateur de ligne de vue vers la souris
+        const targetX = Math.floor(this.camera.x + this.mousePos.x / CONFIG.CELL_SIZE);
+        const targetY = Math.floor(this.camera.y + this.mousePos.y / CONFIG.CELL_SIZE);
+        const distance = Math.hypot(targetX - this.player.x, targetY - this.player.y);
+        
+        if (distance <= (this.player.range === Infinity ? 100 : this.player.range)) {
+            const canShootThroughWalls = this.player.classType === 'mage';
+            const hasLOS = this.hasLineOfSight(this.player.x, this.player.y, targetX, targetY, canShootThroughWalls);
+            
+            // Dessiner une ligne vers la cible
+            ctx.strokeStyle = hasLOS ? 'rgba(46, 204, 113, 0.5)' : 'rgba(255, 71, 87, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(px + CONFIG.CELL_SIZE / 2, py + CONFIG.CELL_SIZE / 2);
+            ctx.lineTo(
+                (targetX - this.camera.x) * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2,
+                (targetY - this.camera.y) * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2
+            );
+            ctx.stroke();
+            
+            // Dessiner un cercle sur la cible
+            ctx.fillStyle = hasLOS ? 'rgba(46, 204, 113, 0.3)' : 'rgba(255, 71, 87, 0.3)';
+            ctx.beginPath();
+            ctx.arc(
+                (targetX - this.camera.x) * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2,
+                (targetY - this.camera.y) * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2,
+                CONFIG.CELL_SIZE / 2,
+                0,
+                Math.PI * 2
+            );
+            ctx.fill();
+        }
         
         // Indicateur de portée
         if (this.player.range !== Infinity) {
