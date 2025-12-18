@@ -1,7 +1,7 @@
 // ===== CONFIGURATION DU JEU =====
 const CONFIG = {
     GRID_SIZE: 50,
-    CELL_SIZE: 32,
+    CELL_SIZE: 48,
     // Canvas et viewport seront calculés dynamiquement
     
     TOTAL_LEVELS: 50,
