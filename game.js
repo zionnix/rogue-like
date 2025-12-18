@@ -606,6 +606,16 @@ class Game {
         this.sprites.mage.src = './pixel_art/hero/magic men.png';
         this.sprites.tank.src = './pixel_art/hero/tank.png';
         
+        // Charger les textures de terrain pour chaque zone
+        this.terrainTextures = {
+            1: {  // Zone 1 - Forêt Mystique
+                wall: new Image(),
+                floor: new Image()
+            }
+        };
+        this.terrainTextures[1].wall.src = './pixel_art/decors/grass.jpg';
+        this.terrainTextures[1].floor.src = './pixel_art/decors/walking_grass.jpg';
+        
         this.setupEventListeners();
     }
     
@@ -1151,19 +1161,34 @@ class Game {
                     gridY >= 0 && gridY < CONFIG.GRID_SIZE) {
                     
                     const cell = this.dungeon.grid[gridY][gridX];
+                    const screenX = x * CONFIG.CELL_SIZE;
+                    const screenY = y * CONFIG.CELL_SIZE;
                     
-                    if (cell === 1) {
-                        ctx.fillStyle = zoneColors[0]; // Murs
+                    // Utiliser les textures si disponibles pour cette zone
+                    const zoneTextures = this.terrainTextures[zone];
+                    
+                    if (zoneTextures) {
+                        const texture = cell === 1 ? zoneTextures.wall : zoneTextures.floor;
+                        
+                        if (texture && texture.complete) {
+                            ctx.imageSmoothingEnabled = false;
+                            ctx.drawImage(
+                                texture,
+                                screenX,
+                                screenY,
+                                CONFIG.CELL_SIZE,
+                                CONFIG.CELL_SIZE
+                            );
+                        } else {
+                            // Fallback couleur si texture pas chargée
+                            ctx.fillStyle = cell === 1 ? zoneColors[0] : zoneColors[1];
+                            ctx.fillRect(screenX, screenY, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
+                        }
                     } else {
-                        ctx.fillStyle = zoneColors[1]; // Sol
+                        // Zones sans textures - utiliser les couleurs
+                        ctx.fillStyle = cell === 1 ? zoneColors[0] : zoneColors[1];
+                        ctx.fillRect(screenX, screenY, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
                     }
-                    
-                    ctx.fillRect(
-                        x * CONFIG.CELL_SIZE,
-                        y * CONFIG.CELL_SIZE,
-                        CONFIG.CELL_SIZE,
-                        CONFIG.CELL_SIZE
-                    );
                 }
             }
         }
