@@ -1388,13 +1388,37 @@ class Game {
             if (ex >= 0 && ex < this.canvas.width && 
                 ey >= 0 && ey < this.canvas.height) {
                 
-                ctx.fillStyle = enemy.isBoss ? '#ff4757' : '#e74c3c';
+                // Couleur selon le type d'ennemi
+                if (enemy.isBoss) {
+                    ctx.fillStyle = '#ff4757'; // Rouge vif pour le boss
+                } else if (enemy.combatType === 'ranged') {
+                    ctx.fillStyle = '#9b59b6'; // Violet pour les ennemis à distance
+                } else {
+                    ctx.fillStyle = '#e74c3c'; // Rouge pour les mêlée
+                }
+                
                 ctx.fillRect(ex, ey, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
+                
+                // Indicateur de type (épée ou arc)
+                ctx.fillStyle = '#fff';
+                ctx.font = `${Math.floor(CONFIG.CELL_SIZE * 0.4)}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(
+                    enemy.combatType === 'ranged' ? '🏹' : '⚔️',
+                    ex + CONFIG.CELL_SIZE / 2,
+                    ey + CONFIG.CELL_SIZE / 2
+                );
                 
                 // Barre de vie
                 const healthPercent = enemy.health / enemy.maxHealth;
-                ctx.fillStyle = '#2ecc71';
-                ctx.fillRect(ex, ey - 4, CONFIG.CELL_SIZE * healthPercent, 2);
+                ctx.fillStyle = enemy.isAggro ? '#ff6b6b' : '#2ecc71';
+                ctx.fillRect(ex, ey - 6, CONFIG.CELL_SIZE * healthPercent, 4);
+                
+                // Bordure de la barre de vie
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(ex, ey - 6, CONFIG.CELL_SIZE, 4);
             }
         }
         
