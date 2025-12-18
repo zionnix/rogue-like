@@ -31,6 +31,7 @@ body {
   display: none;
   opacity: 0;
   transition: opacity 0.5s ease;
+  overflow: hidden;
 }
 .screen.active {
   display: flex;
@@ -104,7 +105,12 @@ body {
 #class-selection {
   justify-content: center;
   align-items: center;
+  flex-direction: column;
   background: radial-gradient(circle at 20% 80%, rgba(255, 107, 157, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(78, 205, 196, 0.1) 0%, transparent 50%), linear-gradient(180deg, #0a0e1a 0%, rgb(18.5, 25.9, 48.1) 100%);
+}
+
+#class-selection .back-btn {
+  margin-top: 2rem;
 }
 
 .class-grid {
@@ -516,8 +522,10 @@ body {
   justify-content: flex-start;
   align-items: center;
   background: radial-gradient(circle at 50% 50%, rgba(78, 205, 196, 0.1) 0%, transparent 50%), linear-gradient(180deg, #0a0e1a 0%, rgb(18.5, 25.9, 48.1) 100%);
-  overflow-y: auto;
+  overflow-y: auto !important;
+  overflow-x: hidden;
   padding: 2rem 0;
+  flex-direction: column;
 }
 
 .lore-container {
@@ -525,6 +533,7 @@ body {
   max-width: 1200px;
   padding: 2rem;
   animation: fadeInUp 0.5s ease;
+  margin-bottom: 2rem;
 }
 
 .lore-header {
