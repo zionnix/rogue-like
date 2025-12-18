@@ -1132,14 +1132,20 @@ class Game {
             return;
         }
         
+        if (!this.dungeon.grid) {
+            console.error('Dungeon.grid non initialisé!');
+            return;
+        }
+        
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
         // Debug: afficher un fond pour vérifier que le canvas fonctionne
         ctx.fillStyle = '#333';
         ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
-        const zone = Math.ceil(this.currentLevel / CONFIG.LEVELS_PER_ZONE);
-        const zoneColors = CONFIG.ZONES[zone].colors;
+        const zone = Math.ceil(this.currentLevel / CONFIG.LEVELS_PER_ZONE) || 1;
+        const zoneData = CONFIG.ZONES[zone] || CONFIG.ZONES[1];
+        const zoneColors = zoneData.colors;
         
         // Dessiner le donjon
         for (let y = 0; y < this.viewportHeight; y++) {
