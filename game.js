@@ -1167,7 +1167,7 @@ class Game {
                     const screenY = y * CONFIG.CELL_SIZE;
                     
                     // Utiliser les textures si disponibles pour cette zone
-                    const zoneTextures = this.terrainTextures[zone];
+                    const zoneTextures = this.terrainTextures ? this.terrainTextures[zone] : null;
                     
                     if (zoneTextures) {
                         const texture = cell === 1 ? zoneTextures.wall : zoneTextures.floor;
