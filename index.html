@@ -38,46 +38,42 @@
                     <h2>⚔️ Les Quatre Héros</h2>
                     <div class="lore-grid">
                         <div class="lore-card">
-                            <div class="character-icon">🏹</div>
+                            <img src="./pixel_art/hero/archer.png" class="lore-sprite" alt="Archer">
                             <h3>L'Archer</h3>
                             <p>
-                                <!-- TODO: REMPLIR LE LORE DE L'ARCHER -->
-                                <strong>Origine:</strong> [À compléter]<br><br>
-                                <strong>Capacités:</strong> [À compléter]<br><br>
-                                <strong>Histoire:</strong> [À compléter]
+                                <strong>Origine:</strong> Forêts du Nord<br><br>
+                                <strong>Capacités:</strong> Tir de précision à longue portée (6 cases), attaque rapide<br><br>
+                                <strong>Histoire:</strong> Ancien chasseur des forêts mystiques, il a juré de protéger les innocents après que son village fut détruit par les créatures des donjons.
                             </p>
                         </div>
 
                         <div class="lore-card">
-                            <div class="character-icon">⚔️</div>
+                            <img src="./pixel_art/hero/knight.png" class="lore-sprite" alt="Chevalier">
                             <h3>Le Chevalier</h3>
                             <p>
-                                <!-- TODO: REMPLIR LE LORE DU CHEVALIER -->
-                                <strong>Origine:</strong> [À compléter]<br><br>
-                                <strong>Capacités:</strong> [À compléter]<br><br>
-                                <strong>Histoire:</strong> [À compléter]
+                                <strong>Origine:</strong> Royaume de l'Est<br><br>
+                                <strong>Capacités:</strong> Combat au corps à corps équilibré, bonne résistance<br><br>
+                                <strong>Histoire:</strong> Chevalier déchu en quête de rédemption, il cherche à prouver sa valeur en affrontant les ténèbres qui menacent le monde.
                             </p>
                         </div>
 
                         <div class="lore-card">
-                            <div class="character-icon">🛡️</div>
+                            <img src="./pixel_art/hero/tank.png" class="lore-sprite" alt="Bouclier">
                             <h3>Le Bouclier</h3>
                             <p>
-                                <!-- TODO: REMPLIR LE LORE DU BOUCLIER -->
-                                <strong>Origine:</strong> [À compléter]<br><br>
-                                <strong>Capacités:</strong> [À compléter]<br><br>
-                                <strong>Histoire:</strong> [À compléter]
+                                <strong>Origine:</strong> Montagnes de Fer<br><br>
+                                <strong>Capacités:</strong> Très résistant, dégâts élevés, attaque lente<br><br>
+                                <strong>Histoire:</strong> Ancien garde du palais royal, son bouclier légendaire a été forgé dans les flammes du dragon ancestral.
                             </p>
                         </div>
 
                         <div class="lore-card">
-                            <div class="character-icon">✨</div>
+                            <img src="./pixel_art/hero/magic men.png" class="lore-sprite" alt="Magicien">
                             <h3>Le Magicien</h3>
                             <p>
-                                <!-- TODO: REMPLIR LE LORE DU MAGICIEN -->
-                                <strong>Origine:</strong> [À compléter]<br><br>
-                                <strong>Capacités:</strong> [À compléter]<br><br>
-                                <strong>Histoire:</strong> [À compléter]
+                                <strong>Origine:</strong> Tour des Arcanes<br><br>
+                                <strong>Capacités:</strong> Magie puissante à distance (4 cases), peut tirer à travers les murs<br><br>
+                                <strong>Histoire:</strong> Dernier survivant d'un ordre de mages, il maîtrise des sorts oubliés capables de traverser la matière elle-même.
                             </p>
                         </div>
                     </div>
@@ -86,58 +82,85 @@
                 <!-- Section Monstres -->
                 <div class="lore-section">
                     <h2>👾 Les Créatures des Donjons</h2>
+                    
+                    <h3 class="monster-category">⚔️ Combattants Mêlée</h3>
                     <div class="lore-grid">
                         <div class="lore-card">
-                            <div class="character-icon">🐀</div>
-                            <h3>Rats Mutants</h3>
+                            <img src="./pixel_art/ennemi/green_knif_men.png" class="lore-sprite" alt="Green Knif Men">
+                            <h3>L'Homme au Couteau Vert</h3>
                             <p>
-                                <!-- TODO: REMPLIR LE LORE DES RATS MUTANTS -->
-                                [À compléter - Description des rats mutants, leur comportement, leur origine]
+                                <strong>Type:</strong> Mêlée<br><br>
+                                <strong>Danger:</strong> ⭐⭐<br><br>
+                                <strong>Description:</strong> Ancien bandit corrompu par les ténèbres du donjon. Son couteau empoisonné brille d'une lueur verdâtre malsaine.
                             </p>
                         </div>
 
                         <div class="lore-card">
-                            <div class="character-icon">👹</div>
-                            <h3>Gobelins</h3>
+                            <img src="./pixel_art/ennemi/human_mad.png" class="lore-sprite" alt="Human Mad">
+                            <h3>L'Humain Fou</h3>
                             <p>
-                                <!-- TODO: REMPLIR LE LORE DES GOBELINS -->
-                                [À compléter - Description des gobelins, leur société, leurs tactiques]
+                                <strong>Type:</strong> Mêlée<br><br>
+                                <strong>Danger:</strong> ⭐⭐<br><br>
+                                <strong>Description:</strong> Aventurier ayant perdu la raison dans les profondeurs. Sa folie lui donne une force surhumaine mais imprévisible.
+                            </p>
+                        </div>
+                    </div>
+
+                    <h3 class="monster-category">🏹 Tireurs à Distance</h3>
+                    <div class="lore-grid">
+                        <div class="lore-card">
+                            <img src="./pixel_art/ennemi/witch.png" class="lore-sprite" alt="Witch">
+                            <h3>La Sorcière</h3>
+                            <p>
+                                <strong>Type:</strong> Distance (portée 4)<br><br>
+                                <strong>Danger:</strong> ⭐⭐⭐<br><br>
+                                <strong>Description:</strong> Pratiquante des arts sombres, elle lance des malédictions depuis les ombres. Ses sortilèges sont aussi précis que mortels.
                             </p>
                         </div>
 
                         <div class="lore-card">
-                            <div class="character-icon">🧟</div>
-                            <h3>Morts-Vivants</h3>
+                            <img src="./pixel_art/ennemi/gobelin_witch.png" class="lore-sprite" alt="Gobelin Witch">
+                            <h3>La Sorcière Gobeline</h3>
                             <p>
-                                <!-- TODO: REMPLIR LE LORE DES MORTS-VIVANTS -->
-                                [À compléter - Description des morts-vivants, leur malédiction]
+                                <strong>Type:</strong> Distance (portée 4)<br><br>
+                                <strong>Danger:</strong> ⭐⭐⭐<br><br>
+                                <strong>Description:</strong> Rare gobeline ayant maîtrisé la magie. Ses potions explosives et ses incantations chaotiques la rendent très dangereuse.
                             </p>
                         </div>
 
                         <div class="lore-card">
-                            <div class="character-icon">🦇</div>
-                            <h3>Chauves-souris Géantes</h3>
+                            <img src="./pixel_art/ennemi/gun_gobelin.png" class="lore-sprite" alt="Gun Gobelin">
+                            <h3>Le Gobelin Armé</h3>
                             <p>
-                                <!-- TODO: REMPLIR LE LORE DES CHAUVES-SOURIS -->
-                                [À compléter - Description des chauves-souris, leur habitat]
+                                <strong>Type:</strong> Distance (portée 4)<br><br>
+                                <strong>Danger:</strong> ⭐⭐⭐<br><br>
+                                <strong>Description:</strong> Gobelin ingénieux ayant construit une arme rudimentaire. Ce qu'il manque en précision, il le compense par sa cadence de tir.
                             </p>
                         </div>
+                    </div>
 
+                    <h3 class="monster-category">🛡️ Tanks</h3>
+                    <div class="lore-grid">
                         <div class="lore-card">
-                            <div class="character-icon">🕷️</div>
-                            <h3>Araignées des Ombres</h3>
+                            <img src="./pixel_art/ennemi/tank_monster.png" class="lore-sprite" alt="Tank Monster">
+                            <h3>Le Monstre Blindé</h3>
                             <p>
-                                <!-- TODO: REMPLIR LE LORE DES ARAIGNÉES -->
-                                [À compléter - Description des araignées, leur venin]
+                                <strong>Type:</strong> Tank (2x vie)<br><br>
+                                <strong>Danger:</strong> ⭐⭐⭐⭐<br><br>
+                                <strong>Description:</strong> Créature massive dont la peau s'est pétrifiée au fil des siècles. Lent mais presque indestructible, il écrase tout sur son passage.
                             </p>
                         </div>
+                    </div>
 
+                    <h3 class="monster-category">🐀 Créatures Rapides</h3>
+                    <div class="lore-grid">
                         <div class="lore-card">
-                            <div class="character-icon">👿</div>
-                            <h3>Démons Mineurs</h3>
+                            <img src="./pixel_art/ennemi/crazy_gobelin.png" class="lore-sprite" alt="Crazy Gobelin">
+                            <h3>Le Gobelin Fou</h3>
                             <p>
-                                <!-- TODO: REMPLIR LE LORE DES DÉMONS -->
-                                [À compléter - Description des démons, leur plan maléfique]
+                                <strong>Type:</strong> Rapide (4 cases/sec, 0.5x vie)<br><br>
+                                <strong>Danger:</strong> ⭐⭐⭐<br><br>
+                                <strong>Description:</strong> Gobelin hyperactif ayant consommé trop de champignons magiques. Extrêmement rapide mais fragile, il attaque en meute avec ses congénères.
                             </p>
                         </div>
                     </div>
@@ -145,18 +168,17 @@
 
                 <!-- Section Boss -->
                 <div class="lore-section">
-                    <h2>👑 Les Cinq Gardiens Légendaires</h2>
+                    <h2>👑 Les Gardiens Légendaires</h2>
                     
                     <div class="boss-card">
-                        <div class="boss-image">🌳</div>
+                        <img src="./pixel_art/boss/boss_1.png" class="boss-sprite" alt="Boss Zone 1">
                         <div class="boss-content">
-                            <h3>Gardien de la Forêt</h3>
-                            <p class="boss-subtitle">Niveau 10 - Forêt Mystique</p>
+                            <h3>Gardien de la Forêt Mystique</h3>
+                            <p class="boss-subtitle">Niveau 10 - Zone 1</p>
                             <p>
-                                <!-- TODO: REMPLIR LE LORE DU BOSS DE LA FORÊT -->
-                                <strong>Nom:</strong> [À compléter]<br><br>
-                                <strong>Histoire:</strong> [À compléter - Son origine, pourquoi il garde la forêt, ses pouvoirs]<br><br>
-                                <strong>Pouvoirs:</strong> [À compléter - Ses capacités au combat]
+                                <strong>Nom:</strong> Sylvanus l'Ancien<br><br>
+                                <strong>Histoire:</strong> Autrefois protecteur bienveillant de la forêt, Sylvanus a été corrompu par une malédiction ancienne. Son corps est désormais un amas de racines tordues et de ronces empoisonnées.<br><br>
+                                <strong>Pouvoirs:</strong> Invoque des lianes pour immobiliser ses proies, régénère sa santé grâce à la nature environnante. Tue tous les ennemis restants et donne un niveau complet d'XP !
                             </p>
                         </div>
                     </div>
@@ -164,13 +186,12 @@
                     <div class="boss-card">
                         <div class="boss-image">⛰️</div>
                         <div class="boss-content">
-                            <h3>Seigneur des Grottes</h3>
-                            <p class="boss-subtitle">Niveau 20 - Grottes Obscures</p>
+                            <h3>Seigneur des Grottes Obscures</h3>
+                            <p class="boss-subtitle">Niveau 20 - Zone 2</p>
                             <p>
-                                <!-- TODO: REMPLIR LE LORE DU BOSS DES GROTTES -->
-                                <strong>Nom:</strong> [À compléter]<br><br>
-                                <strong>Histoire:</strong> [À compléter - Son règne souterrain, comment il est devenu le seigneur]<br><br>
-                                <strong>Pouvoirs:</strong> [À compléter - Ses capacités dévastatrices]
+                                <strong>Nom:</strong> Gorath le Ténébreux<br><br>
+                                <strong>Histoire:</strong> Roi déchu d'un empire souterrain oublié, Gorath règne sur les créatures des profondeurs depuis des millénaires. Sa haine pour la lumière est sans limite.<br><br>
+                                <strong>Pouvoirs:</strong> Plonge l'arène dans l'obscurité, invoque des stalactites mortelles. Donne un niveau complet d'XP à sa défaite.
                             </p>
                         </div>
                     </div>
@@ -178,13 +199,12 @@
                     <div class="boss-card">
                         <div class="boss-image">🔥</div>
                         <div class="boss-content">
-                            <h3>Titan de Lave</h3>
-                            <p class="boss-subtitle">Niveau 30 - Terres de Lave</p>
+                            <h3>Titan des Terres de Lave</h3>
+                            <p class="boss-subtitle">Niveau 30 - Zone 3</p>
                             <p>
-                                <!-- TODO: REMPLIR LE LORE DU BOSS DE LAVE -->
-                                <strong>Nom:</strong> [À compléter]<br><br>
-                                <strong>Histoire:</strong> [À compléter - Sa naissance du feu, sa rage éternelle]<br><br>
-                                <strong>Pouvoirs:</strong> [À compléter - Ses attaques enflammées]
+                                <strong>Nom:</strong> Ignis le Calciné<br><br>
+                                <strong>Histoire:</strong> Né des flammes d'un volcan en éruption, Ignis est la colère de la terre incarnée. Son corps de magma ne connaît ni pitié ni repos.<br><br>
+                                <strong>Pouvoirs:</strong> Crache des boules de feu, laisse des traces de lave au sol. Donne un niveau complet d'XP à sa défaite.
                             </p>
                         </div>
                     </div>
@@ -192,13 +212,12 @@
                     <div class="boss-card">
                         <div class="boss-image">🌊</div>
                         <div class="boss-content">
-                            <h3>Léviathan des Abysses</h3>
-                            <p class="boss-subtitle">Niveau 40 - Profondeurs Aquatiques</p>
+                            <h3>Léviathan des Profondeurs</h3>
+                            <p class="boss-subtitle">Niveau 40 - Zone 4</p>
                             <p>
-                                <!-- TODO: REMPLIR LE LORE DU BOSS AQUATIQUE -->
-                                <strong>Nom:</strong> [À compléter]<br><br>
-                                <strong>Histoire:</strong> [À compléter - Créature ancienne des profondeurs, ses légendes]<br><br>
-                                <strong>Pouvoirs:</strong> [À compléter - Contrôle de l'eau et des tempêtes]
+                                <strong>Nom:</strong> Abyssia la Dévorante<br><br>
+                                <strong>Histoire:</strong> Créature millénaire des abysses, Abyssia a englouti des flottes entières. Les marins racontent que ses yeux brillent dans les nuits de tempête.<br><br>
+                                <strong>Pouvoirs:</strong> Déclenche des vagues dévastatrices, peut se téléporter via des tourbillons. Donne un niveau complet d'XP à sa défaite.
                             </p>
                         </div>
                     </div>
@@ -206,13 +225,12 @@
                     <div class="boss-card">
                         <div class="boss-image">🤖</div>
                         <div class="boss-content">
-                            <h3>IA Corrompue</h3>
-                            <p class="boss-subtitle">Niveau 50 - Cité Futuriste</p>
+                            <h3>L'Intelligence Corrompue</h3>
+                            <p class="boss-subtitle">Niveau 50 - Zone 5 (BOSS FINAL)</p>
                             <p>
-                                <!-- TODO: REMPLIR LE LORE DU BOSS FINAL -->
-                                <strong>Nom:</strong> [À compléter]<br><br>
-                                <strong>Histoire:</strong> [À compléter - Intelligence artificielle devenue folle, son plan pour dominer]<br><br>
-                                <strong>Pouvoirs:</strong> [À compléter - Technologie avancée, drones, lasers]
+                                <strong>Nom:</strong> NEXUS-Omega<br><br>
+                                <strong>Histoire:</strong> Dernière création d'une civilisation avancée disparue, NEXUS a évolué au-delà de sa programmation initiale. Son objectif : purger toute vie organique du monde.<br><br>
+                                <strong>Pouvoirs:</strong> Lasers de précision, bouclier énergétique, invoque des drones de combat. Le vaincre, c'est sauver le monde !
                             </p>
                         </div>
                     </div>
