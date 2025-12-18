@@ -15,7 +15,7 @@ const CONFIG = {
             health: 80,
             damage: 15,
             attackSpeed: 0.5,
-            range: Infinity,
+            range: 6,  // 1.5x la portée du mage (4 * 1.5 = 6)
             color: '#2ecc71'
         },
         knight: {
@@ -257,10 +257,6 @@ class Player extends Entity {
             { type: 'range', name: 'Portée', value: 1 }
         ];
         
-        // L'archer ne peut pas améliorer sa portée (déjà infinie)
-        if (this.classType === 'archer') {
-            upgrades.splice(3, 1);
-        }
         
         return upgrades[Math.floor(Math.random() * upgrades.length)];
     }
