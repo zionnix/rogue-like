@@ -642,6 +642,9 @@ class Game {
         // Système d'animations
         this.animations = [];
         
+        // Textes flottants (dégâts, XP, etc.)
+        this.floatingTexts = [];
+        
         // Charger les sprites des personnages
         this.sprites = {
             archer: new Image(),
@@ -792,6 +795,16 @@ class Game {
         });
         
         document.getElementById('victory-restart-btn').addEventListener('click', () => {
+            this.showScreen('main-menu');
+        });
+        
+        // Boutons retour au menu pendant le jeu
+        document.getElementById('back-to-menu-btn').addEventListener('click', () => {
+            this.state = 'menu';
+            this.showScreen('main-menu');
+        });
+        
+        document.getElementById('class-back-btn').addEventListener('click', () => {
             this.showScreen('main-menu');
         });
     }
@@ -1082,12 +1095,15 @@ class Game {
                     const damage = this.player.damage;
                     const killed = target.takeDamage(damage);
                     
-                    this.addLog(`-${damage} HP ennemi`, 'damage');
+                    // Afficher les dégâts au-dessus de l'ennemi
+                    this.addFloatingText(target.x, target.y, `-${damage}`, '#ff6b6b');
                     
                     if (killed) {
                         this.enemies = this.enemies.filter(e => e !== target);
                         this.player.gainXP(target.xpValue);
-                        this.addLog(`Ennemi vaincu! +${target.xpValue} XP`, 'info');
+                        // Afficher l'XP gagné au-dessus du joueur
+                        const xpText = target.xpValue === 'level' ? 'LEVEL UP!' : `+${target.xpValue} XP`;
+                        this.addFloatingText(this.player.x, this.player.y, xpText, '#ffd93d');
                     }
                 };
                 
@@ -1195,7 +1211,8 @@ class Game {
                     // Appliquer les dégâts quand l'animation touche
                     meleeAnim.onComplete = () => {
                         const killed = this.player.takeDamage(damageValue);
-                        this.addLog(`Ennemi (${enemyTypeLabel}) vous inflige ${damageValue} dégâts!`, 'damage');
+                        // Afficher les dégâts au-dessus du joueur
+                        this.addFloatingText(this.player.x, this.player.y, `-${damageValue}`, '#ff4757');
                         if (killed) this.gameOver();
                     };
                     
@@ -1216,7 +1233,8 @@ class Game {
                         // Appliquer les dégâts quand le projectile touche
                         projectileAnim.onComplete = () => {
                             const killed = this.player.takeDamage(damageValue);
-                            this.addLog(`Ennemi (distance) vous inflige ${damageValue} dégâts!`, 'damage');
+                            // Afficher les dégâts au-dessus du joueur
+                            this.addFloatingText(this.player.x, this.player.y, `-${damageValue}`, '#ff4757');
                             if (killed) this.gameOver();
                         };
                         
@@ -1395,10 +1413,29 @@ class Game {
             range: '🎯 Portée'
         };
         
+        // Valeurs de bonus par niveau d'upgrade
+        const upgradeValues = {
+            damage: 5,      // +5 dégâts par niveau
+            health: 20,     // +20 vie max par niveau
+            speed: -0.1,    // -0.1s de cooldown par niveau
+            range: 1        // +1 portée par niveau
+        };
+        
+        const upgradeUnits = {
+            damage: 'dégâts',
+            health: 'vie max',
+            speed: 's cooldown',
+            range: 'case(s)'
+        };
+        
         for (const [key, value] of Object.entries(this.player.upgrades)) {
             if (value > 0) {
+                const totalBonus = upgradeValues[key] * value;
+                const bonusText = key === 'speed' ? `${totalBonus}` : `+${totalBonus}`;
+                
                 const div = document.createElement('div');
                 div.className = 'upgrade-item';
+                div.setAttribute('data-tooltip', `${bonusText} ${upgradeUnits[key]}`);
                 div.innerHTML = `
                     <span>${upgradeNames[key]}</span>
                     <span class="upgrade-level">Niv. ${value}</span>
@@ -1422,6 +1459,55 @@ class Game {
         }
     }
     
+    // Ajouter un texte flottant au-dessus d'une entité
+    addFloatingText(x, y, text, color = '#fff', duration = 1.5) {
+        this.floatingTexts.push({
+            x: x,
+            y: y,
+            text: text,
+            color: color,
+            duration: duration,
+            elapsed: 0,
+            offsetY: 0
+        });
+    }
+    
+    // Mettre à jour les textes flottants
+    updateFloatingTexts(deltaTime) {
+        this.floatingTexts = this.floatingTexts.filter(ft => {
+            ft.elapsed += deltaTime;
+            ft.offsetY -= deltaTime * 30; // Monte de 30 pixels par seconde
+            return ft.elapsed < ft.duration;
+        });
+    }
+    
+    // Dessiner les textes flottants
+    renderFloatingTexts(ctx) {
+        for (const ft of this.floatingTexts) {
+            const screenX = (ft.x - this.camera.x) * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
+            const screenY = (ft.y - this.camera.y) * CONFIG.CELL_SIZE + ft.offsetY - 10;
+            
+            // Fade out
+            const alpha = Math.max(0, 1 - (ft.elapsed / ft.duration));
+            
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.font = 'bold 16px "Press Start 2P"';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Ombre
+            ctx.fillStyle = '#000';
+            ctx.fillText(ft.text, screenX + 2, screenY + 2);
+            
+            // Texte
+            ctx.fillStyle = ft.color;
+            ctx.fillText(ft.text, screenX, screenY);
+            
+            ctx.restore();
+        }
+    }
+    
     gameLoop(currentTime) {
         if (this.state !== 'playing') return;
         
@@ -1431,6 +1517,7 @@ class Game {
         // Mise à jour
         this.player.update(deltaTime);
         this.updateEnemies(deltaTime);
+        this.updateFloatingTexts(deltaTime);
         this.updateHUD();
         
         // Mise à jour de l'animation de marche
@@ -1695,6 +1782,9 @@ class Game {
         for (const anim of this.animations) {
             anim.render(ctx, this.camera, CONFIG.CELL_SIZE);
         }
+        
+        // Dessiner les textes flottants par-dessus tout
+        this.renderFloatingTexts(ctx);
     }
 }
 

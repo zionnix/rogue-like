@@ -913,3 +913,61 @@ button:active {
   image-rendering: -moz-crisp-edges;
   image-rendering: crisp-edges;
 }
+
+/* Bouton retour dans sélection de classe */
+.back-btn {
+  margin-top: 2rem;
+  min-width: 200px;
+}
+
+/* Bouton menu pendant le jeu */
+.game-menu-btn {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 100;
+  padding: 0.5rem 1rem;
+  font-size: 0.7rem;
+  min-width: auto;
+  background: rgba(0, 0, 0, 0.7);
+  border: 2px solid #4ecdc4;
+}
+
+.game-menu-btn:hover {
+  background: rgba(78, 205, 196, 0.3);
+  border-color: #ffd93d;
+}
+
+/* Tooltips pour les améliorations */
+.upgrade-item {
+  position: relative;
+  cursor: pointer;
+}
+
+.upgrade-item[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  border: 2px solid #ffd93d;
+  padding: 0.5rem 0.8rem;
+  font-size: 0.6rem;
+  white-space: nowrap;
+  z-index: 1000;
+  color: #ffd93d;
+  margin-bottom: 5px;
+}
+
+.upgrade-item[data-tooltip]:hover::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #ffd93d;
+  margin-bottom: -7px;
+  z-index: 1001;
+}
