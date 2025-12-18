@@ -1,7 +1,7 @@
 // ===== CONFIGURATION DU JEU =====
 const CONFIG = {
     GRID_SIZE: 50,
-    CELL_SIZE: 48,
+    CELL_SIZE: 96, // Taille triplée pour des sprites 3x plus grands
     // Canvas et viewport seront calculés dynamiquement
     
     TOTAL_LEVELS: 50,
@@ -598,10 +598,10 @@ class Game {
             tank: new Image()
         };
         
-        this.sprites.archer.src = './pixel_art/hero/archer.png';
-        this.sprites.knight.src = './pixel_art/hero/knight.png';
-        this.sprites.mage.src = './pixel_art/hero/magic men.png';
-        this.sprites.tank.src = './pixel_art/hero/tank.png';
+        this.sprites.archer.src = 'assets/archer.png';
+        this.sprites.knight.src = 'assets/knight.png';
+        this.sprites.mage.src = 'assets/magic_men.png';
+        this.sprites.tank.src = 'assets/tank.png';
         
         this.setupEventListeners();
     }
@@ -609,26 +609,38 @@ class Game {
     resizeCanvas() {
         // Obtenir la taille du conteneur du canvas
         const container = document.getElementById('game-canvas-container');
-        const hud = document.getElementById('hud');
-        const upgradesBar = document.getElementById('upgrades-bar');
         
-        // Calculer la hauteur disponible
-        const hudHeight = hud ? hud.getBoundingClientRect().height : 100;
-        const upgradesHeight = upgradesBar ? upgradesBar.getBoundingClientRect().height : 80;
-        
-        const width = window.innerWidth;
-        const height = window.innerHeight - hudHeight - upgradesHeight;
-        
-        // Appliquer les dimensions au canvas
-        this.canvas.width = width;
-        this.canvas.height = Math.max(height, 300);
-        
-        // Calculer le viewport en fonction de la taille du canvas
-        // Assurer des valeurs minimales pour éviter les erreurs
-        this.viewportWidth = Math.max(15, Math.floor(this.canvas.width / CONFIG.CELL_SIZE));
-        this.viewportHeight = Math.max(12, Math.floor(this.canvas.height / CONFIG.CELL_SIZE));
-        
-        console.log(`Canvas resized: ${this.canvas.width}x${this.canvas.height}, Viewport: ${this.viewportWidth}x${this.viewportHeight}`);
+        if (container) {
+            const rect = container.getBoundingClientRect();
+            
+            // Calculer combien de cellules on peut afficher
+            const viewportCols = Math.floor(rect.width / CONFIG.CELL_SIZE);
+            const viewportRows = Math.floor(rect.height / CONFIG.CELL_SIZE);
+            
+            // Définir la taille du canvas pour qu'il soit un multiple exact de CELL_SIZE
+            this.canvas.width = viewportCols * CONFIG.CELL_SIZE;
+            this.canvas.height = viewportRows * CONFIG.CELL_SIZE;
+            
+            // Sauvegarder les dimensions du viewport
+            this.viewportWidth = viewportCols;
+            this.viewportHeight = viewportRows;
+        } else {
+            // Fallback si le conteneur n'existe pas encore
+            const hud = document.getElementById('hud');
+            const upgradesBar = document.getElementById('upgrades-bar');
+            const hudHeight = hud ? hud.offsetHeight : 120;
+            const upgradesHeight = upgradesBar ? upgradesBar.offsetHeight : 100;
+            
+            const availableHeight = window.innerHeight - hudHeight - upgradesHeight;
+            const viewportCols = Math.floor(window.innerWidth / CONFIG.CELL_SIZE);
+            const viewportRows = Math.floor(availableHeight / CONFIG.CELL_SIZE);
+            
+            this.canvas.width = viewportCols * CONFIG.CELL_SIZE;
+            this.canvas.height = viewportRows * CONFIG.CELL_SIZE;
+            
+            this.viewportWidth = viewportCols;
+            this.viewportHeight = viewportRows;
+        }
     }
     
     setupEventListeners() {
@@ -686,10 +698,10 @@ class Game {
         // Mettre à jour l'avatar du joueur avec le sprite
         const avatarElement = document.querySelector('.player-avatar');
         const spriteMap = {
-            archer: './pixel_art/hero/archer.png',
-            knight: './pixel_art/hero/knight.png',
-            mage: './pixel_art/hero/magic men.png',
-            tank: './pixel_art/hero/tank.png'
+            archer: 'assets/archer.png',
+            knight: 'assets/knight.png',
+            mage: 'assets/magic_men.png',
+            tank: 'assets/tank.png'
         };
         avatarElement.style.backgroundImage = `url('${spriteMap[classType]}')`;
         avatarElement.style.backgroundSize = 'contain';
@@ -700,21 +712,16 @@ class Game {
         this.state = 'playing';
         this.showScreen('game-screen');
         
-        // Forcer le redimensionnement du canvas après un court délai
-        // pour permettre au DOM de se mettre à jour
-        setTimeout(() => {
-            this.resizeCanvas();
-            this.updateHUD();
-            
-            this.addLog(`Bienvenue, ${this.player.className}!`, 'info');
-            this.addLog('Utilisez ZQSD pour vous déplacer', 'info');
-            this.addLog('Cliquez pour attaquer', 'info');
-            
-            // Faire un premier rendu immédiatement
-            this.render();
-            
-            requestAnimationFrame((time) => this.gameLoop(time));
-        }, 100);
+        // Redimensionner le canvas après l'affichage de l'écran de jeu
+        setTimeout(() => this.resizeCanvas(), 100);
+        
+        this.updateHUD();
+        
+        this.addLog(`Bienvenue, ${this.player.className}!`, 'info');
+        this.addLog('Utilisez ZQSD pour vous déplacer', 'info');
+        this.addLog('Cliquez pour attaquer', 'info');
+        
+        requestAnimationFrame((time) => this.gameLoop(time));
     }
     
     generateLevel() {
@@ -1101,18 +1108,7 @@ class Game {
     
     render() {
         const ctx = this.ctx;
-        
-        // Vérifications de sécurité
-        if (!this.dungeon || !this.player) {
-            console.error('Dungeon ou Player non initialisé!');
-            return;
-        }
-        
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // Debug: afficher un fond pour vérifier que le canvas fonctionne
-        ctx.fillStyle = '#333';
-        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
         const zone = Math.ceil(this.currentLevel / CONFIG.LEVELS_PER_ZONE);
         const zoneColors = CONFIG.ZONES[zone].colors;
