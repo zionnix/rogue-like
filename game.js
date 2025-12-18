@@ -791,7 +791,11 @@ class Game {
                 
                 // Vérifier si on atteint la sortie
                 if (newX === this.exit.x && newY === this.exit.y) {
-                    this.nextLevel();
+                    if (this.enemies.length === 0) {
+                        this.nextLevel();
+                    } else {
+                        this.addLog(`🔒 Éliminez tous les ennemis! (${this.enemies.length} restants)`, 'info');
+                    }
                 }
             }
             
@@ -1170,18 +1174,25 @@ class Game {
         // Dessiner la sortie
         const exitX = (this.exit.x - this.camera.x) * CONFIG.CELL_SIZE;
         const exitY = (this.exit.y - this.camera.y) * CONFIG.CELL_SIZE;
+        const exitUnlocked = this.enemies.length === 0;
         
         if (exitX >= 0 && exitX < this.canvas.width && 
             exitY >= 0 && exitY < this.canvas.height) {
-            ctx.fillStyle = '#ffd93d';
+            
+            // Couleur de la sortie selon si elle est déverrouillée ou non
+            if (exitUnlocked) {
+                ctx.fillStyle = '#ffd93d'; // Jaune doré - sortie active
+            } else {
+                ctx.fillStyle = '#555555'; // Gris - sortie verrouillée
+            }
             ctx.fillRect(exitX, exitY, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
             
-            // Étoile pour la sortie
-            ctx.fillStyle = '#000';
-            ctx.font = '12px Arial';
+            // Étoile ou cadenas pour la sortie
+            ctx.fillStyle = exitUnlocked ? '#000' : '#888';
+            ctx.font = `${Math.floor(CONFIG.CELL_SIZE * 0.5)}px Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('★', exitX + CONFIG.CELL_SIZE / 2, exitY + CONFIG.CELL_SIZE / 2);
+            ctx.fillText(exitUnlocked ? '★' : '🔒', exitX + CONFIG.CELL_SIZE / 2, exitY + CONFIG.CELL_SIZE / 2);
         }
         
         // Dessiner les ennemis
