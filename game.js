@@ -335,14 +335,23 @@ class Game {
     }
     
     resizeCanvas() {
-        // Obtenir la taille disponible (en tenant compte du HUD et de la barre d'upgrades)
-        const hud = document.getElementById('hud');
-        const upgradesBar = document.getElementById('upgrades-bar');
-        const hudHeight = hud ? hud.offsetHeight : 80;
-        const upgradesHeight = upgradesBar ? upgradesBar.offsetHeight : 60;
+        // Obtenir la taille du conteneur du canvas
+        const container = document.getElementById('game-canvas-container');
         
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight - hudHeight - upgradesHeight;
+        if (container) {
+            const rect = container.getBoundingClientRect();
+            this.canvas.width = rect.width;
+            this.canvas.height = rect.height;
+        } else {
+            // Fallback si le conteneur n'existe pas encore
+            const hud = document.getElementById('hud');
+            const upgradesBar = document.getElementById('upgrades-bar');
+            const hudHeight = hud ? hud.offsetHeight : 120;
+            const upgradesHeight = upgradesBar ? upgradesBar.offsetHeight : 100;
+            
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight - hudHeight - upgradesHeight;
+        }
         
         // Calculer le viewport en fonction de la taille du canvas
         this.viewportWidth = Math.floor(this.canvas.width / CONFIG.CELL_SIZE);
@@ -408,6 +417,10 @@ class Game {
         
         this.state = 'playing';
         this.showScreen('game-screen');
+        
+        // Redimensionner le canvas après l'affichage de l'écran de jeu
+        setTimeout(() => this.resizeCanvas(), 100);
+        
         this.updateHUD();
         
         this.addLog(`Bienvenue, ${this.player.className}!`, 'info');
