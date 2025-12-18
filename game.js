@@ -316,12 +316,18 @@ class Animation {
         this.duration = duration;
         this.elapsed = 0;
         this.finished = false;
+        this.onComplete = null; // Callback appelée à la fin de l'animation
+        this.hasTriggeredComplete = false;
     }
     
     update(deltaTime) {
         this.elapsed += deltaTime;
-        if (this.elapsed >= this.duration) {
+        if (this.elapsed >= this.duration && !this.hasTriggeredComplete) {
             this.finished = true;
+            this.hasTriggeredComplete = true;
+            if (this.onComplete) {
+                this.onComplete();
+            }
         }
     }
     
@@ -887,48 +893,65 @@ class Game {
             );
             
             if (target) {
+                // Préparer la fonction de dégâts qui sera appelée à la fin de l'animation
+                const applyDamage = () => {
+                    // Vérifier que la cible existe toujours
+                    if (!this.enemies.includes(target)) return;
+                    
+                    const damage = this.player.damage;
+                    const killed = target.takeDamage(damage);
+                    
+                    this.addLog(`-${damage} HP ennemi`, 'damage');
+                    
+                    if (killed) {
+                        this.enemies = this.enemies.filter(e => e !== target);
+                        this.player.gainXP(target.xpValue);
+                        this.addLog(`Ennemi vaincu! +${target.xpValue} XP`, 'info');
+                    }
+                };
+                
+                let animation;
+                
                 // Créer l'animation selon la classe
                 if (this.player.classType === 'archer') {
                     // Animation de flèche
-                    this.animations.push(new ProjectileAnimation(
+                    animation = new ProjectileAnimation(
                         this.player.x, this.player.y,
                         targetX, targetY,
                         'arrow'
-                    ));
+                    );
                 } else if (this.player.classType === 'mage') {
                     // Animation de boule magique
-                    this.animations.push(new ProjectileAnimation(
+                    animation = new ProjectileAnimation(
                         this.player.x, this.player.y,
                         targetX, targetY,
                         'magic',
                         10 // Plus lent que la flèche
-                    ));
+                    );
                 } else if (this.player.classType === 'knight') {
                     // Animation de coup d'épée
-                    this.animations.push(new MeleeAnimation(
+                    animation = new MeleeAnimation(
                         this.player.x, this.player.y,
                         targetX, targetY,
                         'knight'
-                    ));
+                    );
                 } else if (this.player.classType === 'tank') {
                     // Animation de coup de bouclier
-                    this.animations.push(new MeleeAnimation(
+                    animation = new MeleeAnimation(
                         this.player.x, this.player.y,
                         targetX, targetY,
                         'tank'
-                    ));
+                    );
                 }
                 
-                const damage = this.player.attack();
-                const killed = target.takeDamage(damage);
-                
-                this.addLog(`-${damage} HP ennemi`, 'damage');
-                
-                if (killed) {
-                    this.enemies = this.enemies.filter(e => e !== target);
-                    this.player.gainXP(target.xpValue);
-                    this.addLog(`Ennemi vaincu! +${target.xpValue} XP`, 'info');
+                // Attacher la callback de dégâts à l'animation
+                if (animation) {
+                    animation.onComplete = applyDamage;
+                    this.animations.push(animation);
                 }
+                
+                // Déclencher le cooldown d'attaque
+                this.player.attack();
             }
         }
     }
