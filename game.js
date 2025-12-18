@@ -605,7 +605,8 @@ class Game {
         this.sprites.knight.src = './pixel_art/hero/knight.png';
         this.sprites.mage.src = './pixel_art/hero/magic men.png';
         this.sprites.tank.src = './pixel_art/hero/tank.png';
-        
+      
+        /* 
         // Charger les textures de terrain pour chaque zone
         this.terrainTextures = {
             1: {  // Zone 1 - Forêt Mystique
@@ -616,6 +617,7 @@ class Game {
         this.terrainTextures[1].wall.src = './pixel_art/decors/walking_grass.jpg';
         this.terrainTextures[1].floor.src = './pixel_art/decors/grass.jpg'; 
         
+        */
         this.setupEventListeners();
     }
     
