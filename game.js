@@ -2,6 +2,7 @@
 const CONFIG = {
     GRID_SIZE: 50,
     CELL_SIZE: 48,
+    SPRITE_SIZE: 80,  // Taille des sprites (personnages et ennemis)
     // Canvas et viewport seront calculés dynamiquement
     
     TOTAL_LEVELS: 50,
@@ -1203,13 +1204,21 @@ class Game {
             if (ex >= 0 && ex < this.canvas.width && 
                 ey >= 0 && ey < this.canvas.height) {
                 
-                ctx.fillStyle = enemy.isBoss ? '#ff4757' : '#e74c3c';
-                ctx.fillRect(ex, ey, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
+                // Calculer le décalage pour centrer le sprite plus grand
+                const spriteOffset = (CONFIG.SPRITE_SIZE - CONFIG.CELL_SIZE) / 2;
                 
-                // Barre de vie
+                ctx.fillStyle = enemy.isBoss ? '#ff4757' : '#e74c3c';
+                ctx.fillRect(
+                    ex - spriteOffset, 
+                    ey - spriteOffset, 
+                    CONFIG.SPRITE_SIZE, 
+                    CONFIG.SPRITE_SIZE
+                );
+                
+                // Barre de vie (centrée sur le sprite)
                 const healthPercent = enemy.health / enemy.maxHealth;
                 ctx.fillStyle = '#2ecc71';
-                ctx.fillRect(ex, ey - 4, CONFIG.CELL_SIZE * healthPercent, 2);
+                ctx.fillRect(ex - spriteOffset, ey - spriteOffset - 6, CONFIG.SPRITE_SIZE * healthPercent, 4);
             }
         }
         
@@ -1217,24 +1226,32 @@ class Game {
         const px = (this.player.x - this.camera.x) * CONFIG.CELL_SIZE;
         const py = (this.player.y - this.camera.y) * CONFIG.CELL_SIZE;
         
+        // Calculer le décalage pour centrer le sprite plus grand
+        const playerSpriteOffset = (CONFIG.SPRITE_SIZE - CONFIG.CELL_SIZE) / 2;
+        
         // Dessiner le sprite du joueur s'il est chargé, sinon carré de couleur
         const sprite = this.sprites[this.player.classType];
         if (sprite && sprite.complete) {
             // Désactiver le lissage pour garder le pixel art
             ctx.imageSmoothingEnabled = false;
             
-            // Dessiner le sprite en l'agrandissant pour remplir la cellule
+            // Dessiner le sprite centré et agrandi
             ctx.drawImage(
                 sprite,
-                px,
-                py,
-                CONFIG.CELL_SIZE,
-                CONFIG.CELL_SIZE
+                px - playerSpriteOffset,
+                py - playerSpriteOffset,
+                CONFIG.SPRITE_SIZE,
+                CONFIG.SPRITE_SIZE
             );
         } else {
             // Fallback: carré de couleur
             ctx.fillStyle = this.player.color;
-            ctx.fillRect(px, py, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
+            ctx.fillRect(
+                px - playerSpriteOffset, 
+                py - playerSpriteOffset, 
+                CONFIG.SPRITE_SIZE, 
+                CONFIG.SPRITE_SIZE
+            );
         }
         
         // Indicateur de portée
