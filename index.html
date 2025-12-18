@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dungeon Crawler - Roguelike</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="game-container">
+        <!-- Menu de sélection de classe -->
+        <div id="class-selection" class="screen active">
+            <div class="title-screen">
+                <h1 class="game-title">DUNGEON CRAWLER</h1>
+                <p class="subtitle">Choisis ta classe</p>
+                <div class="class-grid">
+                    <div class="class-card" data-class="archer">
+                        <div class="class-icon archer-icon"></div>
+                        <h3>Archer</h3>
+                        <div class="class-stats">
+                            <p>🎯 Portée infinie</p>
+                            <p>⚡ Attaque rapide</p>
+                            <p>❤️ Vie faible</p>
+                            <p>💥 Dégâts faibles</p>
+                        </div>
+                    </div>
+                    <div class="class-card" data-class="knight">
+                        <div class="class-icon knight-icon"></div>
+                        <h3>Chevalier</h3>
+                        <div class="class-stats">
+                            <p>⚔️ Attaque moyenne</p>
+                            <p>💥 Dégâts moyens</p>
+                            <p>❤️ Vie moyenne</p>
+                            <p>📍 Portée: 1 case</p>
+                        </div>
+                    </div>
+                    <div class="class-card" data-class="tank">
+                        <div class="class-icon tank-icon"></div>
+                        <h3>Bouclier</h3>
+                        <div class="class-stats">
+                            <p>🛡️ Attaque lente</p>
+                            <p>💥 Dégâts élevés</p>
+                            <p>❤️❤️ Vie haute</p>
+                            <p>👊 Corps à corps</p>
+                        </div>
+                    </div>
+                    <div class="class-card" data-class="mage">
+                        <div class="class-icon mage-icon"></div>
+                        <h3>Magicien</h3>
+                        <div class="class-stats">
+                            <p>✨ Attaque lente</p>
+                            <p>💥 Dégâts élevés</p>
+                            <p>❤️ Vie faible</p>
+                            <p>📍 Portée: 4 cases</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Écran de jeu principal -->
+        <div id="game-screen" class="screen">
+            <!-- HUD supérieur -->
+            <div id="hud">
+                <div class="hud-section">
+                    <div class="player-info">
+                        <div class="player-avatar"></div>
+                        <div class="player-stats">
+                            <h3 id="player-class">Archer</h3>
+                            <div class="stat-bar">
+                                <span class="stat-label">HP</span>
+                                <div class="bar health-bar">
+                                    <div class="bar-fill" id="player-health"></div>
+                                </div>
+                                <span id="health-text">100/100</span>
+                            </div>
+                            <div class="stat-bar">
+                                <span class="stat-label">XP</span>
+                                <div class="bar xp-bar">
+                                    <div class="bar-fill" id="player-xp"></div>
+                                </div>
+                                <span id="xp-text">0/100</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="hud-section center">
+                    <div class="level-info">
+                        <h2 id="level-display">Niveau 1</h2>
+                        <p id="zone-display">Zone 1: Forêt Mystique</p>
+                    </div>
+                </div>
+                <div class="hud-section">
+                    <div class="combat-log" id="combat-log">
+                        <p>Bienvenue dans le donjon...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Canvas de jeu -->
+            <div id="game-canvas-container">
+                <canvas id="game-canvas"></canvas>
+            </div>
+
+            <!-- Barre d'amélioration en bas -->
+            <div id="upgrades-bar">
+                <h3>Améliorations</h3>
+                <div id="upgrades-list"></div>
+            </div>
+        </div>
+
+        <!-- Écran de game over -->
+        <div id="game-over" class="screen">
+            <div class="game-over-content">
+                <h1>GAME OVER</h1>
+                <div id="final-stats"></div>
+                <button id="restart-btn">Rejouer</button>
+            </div>
+        </div>
+
+        <!-- Écran de victoire -->
+        <div id="victory" class="screen">
+            <div class="victory-content">
+                <h1>VICTOIRE!</h1>
+                <p>Tu as vaincu tous les donjons!</p>
+                <div id="victory-stats"></div>
+                <button id="victory-restart-btn">Rejouer</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="game.js"></script>
+</body>
+</html>

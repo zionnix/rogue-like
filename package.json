@@ -1,0 +1,27 @@
+{
+  "name": "dungeon-crawler-roguelike",
+  "version": "1.0.0",
+  "description": "Un roguelike dungeon crawler en pixel art avec génération procédurale",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "build:css": "sass style.scss style.css --no-source-map",
+    "watch:css": "sass --watch style.scss:style.css --no-source-map",
+    "dev": "npm run build:css && npm start"
+  },
+  "keywords": [
+    "roguelike",
+    "dungeon-crawler",
+    "pixel-art",
+    "procedural-generation",
+    "game"
+  ],
+  "author": "Jules",
+  "license": "MIT",
+  "dependencies": {
+    "http": "^0.0.1-security"
+  },
+  "devDependencies": {
+    "sass": "^1.83.1"
+  }
+}
