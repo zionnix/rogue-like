@@ -333,6 +333,7 @@ class Enemy extends Entity {
         
         // Visuel
         this.visualType = Math.floor(Math.random() * 6);
+        this.spriteIndex = 0; // Sera défini lors du spawn
     }
 }
 
@@ -637,6 +638,48 @@ class Game {
         this.sprites.mage.src = './pixel_art/hero/magic men.png';
         this.sprites.tank.src = './pixel_art/hero/tank.png';
         
+        // Charger les sprites des ennemis par zone
+        this.enemySprites = {
+            1: { // Zone 1 - Forêt Mystique
+                melee: [],
+                ranged: [],
+                tank: [],
+                small: []
+            }
+        };
+        
+        // Zone 1 - Mélée
+        const melee1 = new Image();
+        melee1.src = './pixel_art/ennemi/green_knif_men.png';
+        this.enemySprites[1].melee.push(melee1);
+        
+        const melee2 = new Image();
+        melee2.src = './pixel_art/ennemi/human_mad.png';
+        this.enemySprites[1].melee.push(melee2);
+        
+        // Zone 1 - Arché (ranged)
+        const ranged1 = new Image();
+        ranged1.src = './pixel_art/ennemi/witch.png';
+        this.enemySprites[1].ranged.push(ranged1);
+        
+        const ranged2 = new Image();
+        ranged2.src = './pixel_art/ennemi/gobelin_witch.png';
+        this.enemySprites[1].ranged.push(ranged2);
+        
+        const ranged3 = new Image();
+        ranged3.src = './pixel_art/ennemi/gun_gobelin.png';
+        this.enemySprites[1].ranged.push(ranged3);
+        
+        // Zone 1 - Tank
+        const tank1 = new Image();
+        tank1.src = './pixel_art/ennemi/tank_monster.png';
+        this.enemySprites[1].tank.push(tank1);
+        
+        // Zone 1 - Small (rapide)
+        const small1 = new Image();
+        small1.src = './pixel_art/ennemi/crazy_gobelin.png';
+        this.enemySprites[1].small.push(small1);
+        
         this.setupEventListeners();
     }
     
@@ -839,6 +882,13 @@ class Game {
                     const enemyType = this.getEnemyTypeForLevel(this.currentLevel);
                     const enemy = new Enemy(x, y, this.currentLevel, zone, false, enemyType);
                     enemy.currentRoom = room;
+                    
+                    // Assigner un sprite aléatoire pour ce type d'ennemi
+                    if (this.enemySprites[zone] && this.enemySprites[zone][enemyType]) {
+                        const spriteCount = this.enemySprites[zone][enemyType].length;
+                        enemy.spriteIndex = Math.floor(Math.random() * spriteCount);
+                    }
+                    
                     this.enemies.push(enemy);
                 }
             }
@@ -1455,44 +1505,68 @@ class Game {
             if (ex >= 0 && ex < this.canvas.width && 
                 ey >= 0 && ey < this.canvas.height) {
                 
-                // Couleur selon le type d'ennemi
-                if (enemy.isBoss) {
-                    ctx.fillStyle = '#ff4757'; // Rouge vif pour le boss
-                } else if (enemy.combatType === 'ranged') {
-                    ctx.fillStyle = '#9b59b6'; // Violet pour les ennemis à distance
-                } else if (enemy.combatType === 'tank') {
-                    ctx.fillStyle = '#34495e'; // Gris foncé pour les tanks
-                } else if (enemy.combatType === 'small') {
-                    ctx.fillStyle = '#27ae60'; // Vert pour les petits monstres rapides
-                } else {
-                    ctx.fillStyle = '#e74c3c'; // Rouge pour les mêlée
-                }
-                
                 // Taille différente pour les petits monstres
-                const enemySize = enemy.combatType === 'small' ? CONFIG.CELL_SIZE * 0.7 : CONFIG.CELL_SIZE;
+                const enemySize = enemy.combatType === 'small' ? CONFIG.SPRITE_SIZE * 0.7 : CONFIG.SPRITE_SIZE;
                 const offsetSize = (CONFIG.CELL_SIZE - enemySize) / 2;
                 
-                ctx.fillRect(ex + offsetSize, ey + offsetSize, enemySize, enemySize);
+                // Essayer d'utiliser le sprite
+                const zone = enemy.zone;
+                let spriteDrawn = false;
                 
-                // Indicateur de type (emoji selon le type)
-                ctx.fillStyle = '#fff';
-                ctx.font = `${Math.floor(CONFIG.CELL_SIZE * 0.4)}px Arial`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                
-                let enemyEmoji;
-                switch (enemy.combatType) {
-                    case 'ranged': enemyEmoji = '🏹'; break;
-                    case 'tank': enemyEmoji = '🛡️'; break;
-                    case 'small': enemyEmoji = '🐀'; break;
-                    default: enemyEmoji = '⚔️'; break;
+                if (!enemy.isBoss && this.enemySprites[zone] && this.enemySprites[zone][enemy.combatType]) {
+                    const spriteList = this.enemySprites[zone][enemy.combatType];
+                    const sprite = spriteList[enemy.spriteIndex % spriteList.length];
+                    
+                    if (sprite && sprite.complete && sprite.naturalWidth > 0) {
+                        ctx.imageSmoothingEnabled = false;
+                        ctx.drawImage(
+                            sprite,
+                            ex + offsetSize,
+                            ey + offsetSize,
+                            enemySize,
+                            enemySize
+                        );
+                        spriteDrawn = true;
+                    }
                 }
                 
-                ctx.fillText(
-                    enemyEmoji,
-                    ex + CONFIG.CELL_SIZE / 2,
-                    ey + CONFIG.CELL_SIZE / 2
-                );
+                // Fallback: carré coloré avec emoji si pas de sprite
+                if (!spriteDrawn) {
+                    // Couleur selon le type d'ennemi
+                    if (enemy.isBoss) {
+                        ctx.fillStyle = '#ff4757'; // Rouge vif pour le boss
+                    } else if (enemy.combatType === 'ranged') {
+                        ctx.fillStyle = '#9b59b6'; // Violet pour les ennemis à distance
+                    } else if (enemy.combatType === 'tank') {
+                        ctx.fillStyle = '#34495e'; // Gris foncé pour les tanks
+                    } else if (enemy.combatType === 'small') {
+                        ctx.fillStyle = '#27ae60'; // Vert pour les petits monstres rapides
+                    } else {
+                        ctx.fillStyle = '#e74c3c'; // Rouge pour les mêlée
+                    }
+                    
+                    ctx.fillRect(ex + offsetSize, ey + offsetSize, enemySize, enemySize);
+                    
+                    // Indicateur de type (emoji selon le type)
+                    ctx.fillStyle = '#fff';
+                    ctx.font = `${Math.floor(CONFIG.CELL_SIZE * 0.4)}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    let enemyEmoji;
+                    switch (enemy.combatType) {
+                        case 'ranged': enemyEmoji = '🏹'; break;
+                        case 'tank': enemyEmoji = '🛡️'; break;
+                        case 'small': enemyEmoji = '🐀'; break;
+                        default: enemyEmoji = '⚔️'; break;
+                    }
+                    
+                    ctx.fillText(
+                        enemyEmoji,
+                        ex + CONFIG.CELL_SIZE / 2,
+                        ey + CONFIG.CELL_SIZE / 2
+                    );
+                }
                 
                 // Barre de vie
                 const healthPercent = enemy.health / enemy.maxHealth;
