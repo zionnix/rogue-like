@@ -300,20 +300,8 @@ class Enemy extends Entity {
         const levelInZone = ((level - 1) % CONFIG.LEVELS_PER_ZONE) + 1;
         const multiplier = 1 + (levelInZone - 1) * 0.1;
         
-        // Déterminer le type d'ennemi: 'melee', 'ranged', 'tank', 'small'
-        let combatType = enemyType;
-        if (!combatType) {
-            const roll = Math.random();
-            if (roll < 0.35) {
-                combatType = 'melee';  // 35% melee
-            } else if (roll < 0.65) {
-                combatType = 'ranged'; // 30% ranged
-            } else if (roll < 0.85) {
-                combatType = 'tank';   // 20% tank
-            } else {
-                combatType = 'small';  // 15% small (rare)
-            }
-        }
+        // Type d'ennemi (passé en paramètre ou melee par défaut)
+        const combatType = enemyType || 'melee';
         
         // Ajuster la vie selon le type
         let healthMultiplier = 1;
@@ -771,6 +759,44 @@ class Game {
         this.exit = this.dungeon.findExitPoint();
     }
     
+    // Calculer les probabilités de spawn en fonction du niveau
+    getEnemyTypeForLevel(level) {
+        // Niveau 1-3:  70% melee, 20% ranged, 7.5% tank, 2.5% small
+        // Niveau 50:   20% melee, 20% ranged, 40% tank, 20% small
+        // Interpolation linéaire entre les deux
+        
+        const progress = Math.min((level - 1) / 49, 1); // 0 au niveau 1, 1 au niveau 50
+        
+        // Probabilités de départ (niveau 1-3)
+        const startMelee = 0.70;
+        const startRanged = 0.20;
+        const startTank = 0.075;
+        const startSmall = 0.025;
+        
+        // Probabilités finales (niveau 50)
+        const endMelee = 0.20;
+        const endRanged = 0.20;
+        const endTank = 0.40;
+        const endSmall = 0.20;
+        
+        // Interpolation
+        const meleeProb = startMelee + (endMelee - startMelee) * progress;
+        const rangedProb = startRanged + (endRanged - startRanged) * progress;
+        const tankProb = startTank + (endTank - startTank) * progress;
+        // smallProb est le reste
+        
+        const roll = Math.random();
+        if (roll < meleeProb) {
+            return 'melee';
+        } else if (roll < meleeProb + rangedProb) {
+            return 'ranged';
+        } else if (roll < meleeProb + rangedProb + tankProb) {
+            return 'tank';
+        } else {
+            return 'small';
+        }
+    }
+    
     spawnEnemies() {
         this.enemies = [];
         const zone = Math.ceil(this.currentLevel / CONFIG.LEVELS_PER_ZONE);
@@ -791,8 +817,12 @@ class Game {
             this.enemies.push(boss);
             this.addLog('⚠️ BOSS APPARU!', 'damage');
         } else {
-            // Spawner des ennemis normaux
-            const numEnemies = 10 + Math.floor(this.currentLevel * 1.5);
+            // Nombre d'ennemis qui augmente avec le niveau
+            // Niveau 1: ~8, Niveau 25: ~35, Niveau 50: ~60
+            const baseEnemies = 8;
+            const maxEnemies = 60;
+            const progress = (this.currentLevel - 1) / 49;
+            const numEnemies = Math.floor(baseEnemies + (maxEnemies - baseEnemies) * progress);
             
             for (let i = 0; i < numEnemies; i++) {
                 const room = this.dungeon.rooms[
@@ -805,7 +835,9 @@ class Game {
                 // Ne pas spawner trop près du joueur
                 const dist = Math.hypot(x - this.player.x, y - this.player.y);
                 if (dist > 5) {
-                    const enemy = new Enemy(x, y, this.currentLevel, zone);
+                    // Déterminer le type selon le niveau
+                    const enemyType = this.getEnemyTypeForLevel(this.currentLevel);
+                    const enemy = new Enemy(x, y, this.currentLevel, zone, false, enemyType);
                     enemy.currentRoom = room;
                     this.enemies.push(enemy);
                 }
@@ -1055,28 +1087,47 @@ class Game {
             
             // Attaque
             if (enemy.canAttack()) {
-                if (enemy.combatType === 'melee' && distance <= 1) {
-                    // Attaque corps à corps
-                    const damage = enemy.attack();
-                    const killed = this.player.takeDamage(damage);
-                    this.addLog(`Ennemi (mêlée) vous inflige ${damage} dégâts!`, 'damage');
-                    if (killed) this.gameOver();
+                // Attaque corps à corps (melee, tank, small)
+                if ((enemy.combatType === 'melee' || enemy.combatType === 'tank' || enemy.combatType === 'small') && distance <= 1) {
+                    const damageValue = enemy.attack();
+                    const enemyTypeLabel = enemy.combatType === 'tank' ? 'tank' : (enemy.combatType === 'small' ? 'rapide' : 'mêlée');
+                    
+                    // Animation de coup de mêlée
+                    const meleeAnim = new MeleeAnimation(
+                        enemy.x, enemy.y,
+                        this.player.x, this.player.y,
+                        'knight'
+                    );
+                    
+                    // Appliquer les dégâts quand l'animation touche
+                    meleeAnim.onComplete = () => {
+                        const killed = this.player.takeDamage(damageValue);
+                        this.addLog(`Ennemi (${enemyTypeLabel}) vous inflige ${damageValue} dégâts!`, 'damage');
+                        if (killed) this.gameOver();
+                    };
+                    
+                    this.animations.push(meleeAnim);
                 } else if (enemy.combatType === 'ranged' && distance <= enemy.range && distance > 1) {
                     // Attaque à distance - vérifier la ligne de vue
                     if (this.hasLineOfSight(enemy.x, enemy.y, this.player.x, this.player.y, false)) {
-                        const damage = enemy.attack();
-                        const killed = this.player.takeDamage(damage);
+                        const damageValue = enemy.attack();
                         
                         // Animation de projectile ennemi
-                        this.animations.push(new ProjectileAnimation(
+                        const projectileAnim = new ProjectileAnimation(
                             enemy.x, enemy.y,
                             this.player.x, this.player.y,
                             'magic',
                             8
-                        ));
+                        );
                         
-                        this.addLog(`Ennemi (distance) vous inflige ${damage} dégâts!`, 'damage');
-                        if (killed) this.gameOver();
+                        // Appliquer les dégâts quand le projectile touche
+                        projectileAnim.onComplete = () => {
+                            const killed = this.player.takeDamage(damageValue);
+                            this.addLog(`Ennemi (distance) vous inflige ${damageValue} dégâts!`, 'damage');
+                            if (killed) this.gameOver();
+                        };
+                        
+                        this.animations.push(projectileAnim);
                     }
                 }
             }
