@@ -625,22 +625,6 @@ class Game {
         this.sprites.mage.src = './pixel_art/hero/magic men.png';
         this.sprites.tank.src = './pixel_art/hero/tank.png';
         
-        // Charger les spritesheets d'animation de marche
-        this.walkSprites = {
-            archer: new Image(),
-            knight: new Image()
-        };
-        this.walkSprites.archer.src = './pixel_art/hero/archer_walk.png';
-        this.walkSprites.knight.src = './pixel_art/hero/knight_walk.png';
-        
-        // Configuration des spritesheets (grille 4x4, frames de 16x16)
-        this.spriteSheetConfig = {
-            frameWidth: 16,
-            frameHeight: 16,
-            framesPerRow: 4,
-            rows: 4  // bas, gauche, droite, haut
-        };
-        
         this.setupEventListeners();
     }
     
@@ -1028,12 +1012,20 @@ class Game {
             if (enemy.moveTimer >= enemy.moveInterval) {
                 enemy.moveTimer = 0;
                 
-                if (enemy.isAggro) {
-                    // Poursuivre le joueur
-                    this.moveEnemyTowardsPlayer(enemy);
-                } else {
-                    // Mouvement aléatoire dans la salle
-                    this.moveEnemyRandomly(enemy);
+                // Les ennemis à distance s'arrêtent quand le joueur est à portée
+                const inRange = enemy.combatType === 'ranged' && 
+                                distance <= enemy.range && 
+                                distance > 1 &&
+                                this.hasLineOfSight(enemy.x, enemy.y, this.player.x, this.player.y, false);
+                
+                if (!inRange) {
+                    if (enemy.isAggro) {
+                        // Poursuivre le joueur
+                        this.moveEnemyTowardsPlayer(enemy);
+                    } else {
+                        // Mouvement aléatoire dans la salle
+                        this.moveEnemyRandomly(enemy);
+                    }
                 }
             }
             
@@ -1429,48 +1421,25 @@ class Game {
         // Calculer le décalage pour centrer le sprite plus grand
         const playerSpriteOffset = (CONFIG.SPRITE_SIZE - CONFIG.CELL_SIZE) / 2;
         
-        // Vérifier si on a un spritesheet de marche pour cette classe
-        const walkSprite = this.walkSprites ? this.walkSprites[this.player.classType] : null;
-        const hasWalkAnimation = walkSprite && walkSprite.complete;
-        
-        if (hasWalkAnimation && this.player.isWalking) {
-            // Dessiner l'animation de marche
+        // Dessiner le sprite statique du joueur
+        const sprite = this.sprites[this.player.classType];
+        if (sprite && sprite.complete) {
             ctx.imageSmoothingEnabled = false;
-            
-            const config = this.spriteSheetConfig;
-            const frameX = this.player.walkFrame * config.frameWidth;
-            const frameY = this.player.direction * config.frameHeight;
-            
             ctx.drawImage(
-                walkSprite,
-                frameX, frameY,                    // Source X, Y
-                config.frameWidth, config.frameHeight,  // Source largeur, hauteur
-                px - playerSpriteOffset,           // Destination X
-                py - playerSpriteOffset,           // Destination Y
-                CONFIG.SPRITE_SIZE,                // Destination largeur
-                CONFIG.SPRITE_SIZE                 // Destination hauteur
+                sprite,
+                px - playerSpriteOffset,
+                py - playerSpriteOffset,
+                CONFIG.SPRITE_SIZE,
+                CONFIG.SPRITE_SIZE
             );
         } else {
-            // Dessiner le sprite statique
-            const sprite = this.sprites[this.player.classType];
-            if (sprite && sprite.complete) {
-                ctx.imageSmoothingEnabled = false;
-                ctx.drawImage(
-                    sprite,
-                    px - playerSpriteOffset,
-                    py - playerSpriteOffset,
-                    CONFIG.SPRITE_SIZE,
-                    CONFIG.SPRITE_SIZE
-                );
-            } else {
-                ctx.fillStyle = this.player.color;
-                ctx.fillRect(
-                    px - playerSpriteOffset, 
-                    py - playerSpriteOffset, 
-                    CONFIG.SPRITE_SIZE, 
-                    CONFIG.SPRITE_SIZE
-                );
-            }
+            ctx.fillStyle = this.player.color;
+            ctx.fillRect(
+                px - playerSpriteOffset, 
+                py - playerSpriteOffset, 
+                CONFIG.SPRITE_SIZE, 
+                CONFIG.SPRITE_SIZE
+            );
         }
         
         // Indicateur de portée
