@@ -966,6 +966,323 @@ class Enemy extends Entity {
     }
 }
 
+// ===== CLASSE BOSS ZONE 1 - SYLVANUS (Forêt Mystique) =====
+// Mécanique spéciale: Phase 1 (projectiles), Phase 2 (lianes + régénération)
+class ForestBoss extends Enemy {
+    constructor(x, y, level, zone) {
+        super(x, y, level, zone, true, 'boss');
+        
+        // Statistiques de boss
+        this.maxHealth = this.health;
+        this.phase = 1; // Phase 1: projectiles, Phase 2: lianes
+        this.phaseTransitionTriggered = false;
+        this.bossType = 'forest'; // Identifiant du type de boss
+        
+        // Timers pour les attaques
+        this.projectileTimer = 0;
+        this.projectileInterval = 5; // 5 secondes entre projectiles
+        
+        this.vineTimer = 0;
+        this.vineInterval = 3; // 3 secondes entre attaques de lianes
+        
+        this.regenTimer = 0;
+        this.regenInterval = 5; // Régénération toutes les 5 secondes en phase 2
+        
+        this.contactDamageTimer = 0;
+        this.contactDamageInterval = 1; // Dégâts de contact chaque seconde
+        
+        // Effets visuels
+        this.rageAuraRadius = 0;
+        this.rageAuraOpacity = 0;
+        this.isEnraged = false;
+        this.screenShakeIntensity = 0;
+        this.flashWhiteIntensity = 0;
+        
+        // Animation de transition
+        this.transitionAnimating = false;;
+        this.transitionTimer = 0;
+        this.transitionDuration = 3; // 3 secondes de cinématique
+        
+        // Lianes actives
+        this.activeVines = [];
+    }
+    
+    getHealthPercent() {
+        return this.health / this.maxHealth;
+    }
+    
+    update(deltaTime) {
+        super.update(deltaTime);
+        
+        // Vérifier la transition de phase
+        if (this.phase === 1 && this.getHealthPercent() <= 0.5 && !this.phaseTransitionTriggered) {
+            this.triggerPhaseTransition();
+        }
+        
+        // Animation de transition
+        if (this.transitionAnimating) {
+            this.updateTransition(deltaTime);
+            return; // Pas d'autres actions pendant la transition
+        }
+        
+        // Mettre à jour l'aura de rage en phase 2
+        if (this.isEnraged) {
+            this.rageAuraRadius = 80 + Math.sin(Date.now() / 200) * 10;
+            this.rageAuraOpacity = 0.3 + Math.sin(Date.now() / 300) * 0.1;
+        }
+        
+        // Mise à jour des timers d'attaque
+        this.projectileTimer += deltaTime;
+        this.contactDamageTimer += deltaTime;
+        
+        if (this.phase === 2) {
+            this.vineTimer += deltaTime;
+            this.regenTimer += deltaTime;
+            
+            // Régénération en phase 2 (quand < 25% de vie)
+            if (this.getHealthPercent() <= 0.25 && this.regenTimer >= this.regenInterval) {
+                this.regenTimer = 0;
+                const regenAmount = Math.floor(this.maxHealth * 0.05); // 5% de vie max
+                this.health = Math.min(this.maxHealth * 0.5, this.health + regenAmount); // Ne dépasse pas 50%
+                if (typeof game !== 'undefined') {
+                    game.addFloatingText(this.x, this.y, `+${regenAmount} 💚`, '#00ff00');
+                    game.addLog('🌿 Le boss se régénère!', 'heal');
+                }
+            }
+        }
+        
+        // Mise à jour des lianes actives
+        for (let i = this.activeVines.length - 1; i >= 0; i--) {
+            const vine = this.activeVines[i];
+            vine.timer += deltaTime;
+            vine.progress = Math.min(vine.timer / vine.duration, 1);
+            
+            if (vine.timer >= vine.duration + 0.5) {
+                this.activeVines.splice(i, 1);
+            }
+        }
+    }
+    
+    triggerPhaseTransition() {
+        this.phaseTransitionTriggered = true;
+        this.transitionAnimating = true;
+        this.transitionTimer = 0;
+        this.isEnraged = true;
+        
+        // Notifier le jeu de la transition
+        if (typeof game !== 'undefined') {
+            game.pauseGameForBossTransition(this);
+        }
+    }
+    
+    updateTransition(deltaTime) {
+        this.transitionTimer += deltaTime;
+        const progress = this.transitionTimer / this.transitionDuration;
+        
+        // Effets de transition
+        if (progress < 0.3) {
+            // Phase 1: écran qui tremble
+            this.screenShakeIntensity = 10 * (progress / 0.3);
+        } else if (progress < 0.7) {
+            // Phase 2: flash blancs
+            this.screenShakeIntensity = 10;
+            this.flashWhiteIntensity = Math.sin((progress - 0.3) / 0.4 * Math.PI * 6) * 0.5;
+        } else {
+            // Phase 3: stabilisation
+            this.screenShakeIntensity = 10 * (1 - (progress - 0.7) / 0.3);
+            this.flashWhiteIntensity = 0;
+        }
+        
+        if (this.transitionTimer >= this.transitionDuration) {
+            this.transitionAnimating = false;
+            this.phase = 2;
+            this.screenShakeIntensity = 0;
+            this.flashWhiteIntensity = 0;
+            
+            if (typeof game !== 'undefined') {
+                game.resumeGameAfterBossTransition(this);
+            }
+        }
+    }
+    
+    // Lancer un projectile vers le joueur
+    fireProjectile(playerX, playerY) {
+        if (this.projectileTimer < this.projectileInterval) return null;
+        this.projectileTimer = 0;
+        
+        return {
+            startX: this.x,
+            startY: this.y,
+            endX: playerX,
+            endY: playerY,
+            damage: Math.floor(this.damage * 0.8)
+        };
+    }
+    
+    // Lancer des lianes dans toutes les directions
+    fireVines() {
+        if (this.phase !== 2 || this.vineTimer < this.vineInterval) return [];
+        this.vineTimer = 0;
+        
+        const vines = [];
+        const directions = [
+            { dx: 1, dy: 0 },
+            { dx: -1, dy: 0 },
+            { dx: 0, dy: 1 },
+            { dx: 0, dy: -1 },
+            { dx: 1, dy: 1 },
+            { dx: -1, dy: 1 },
+            { dx: 1, dy: -1 },
+            { dx: -1, dy: -1 }
+        ];
+        
+        for (const dir of directions) {
+            const vine = {
+                startX: this.x,
+                startY: this.y,
+                dx: dir.dx,
+                dy: dir.dy,
+                length: 8, // 8 cases de portée
+                damage: 20,
+                timer: 0,
+                duration: 0.5, // 0.5 seconde pour atteindre la portée max
+                progress: 0,
+                hasHitPlayer: false
+            };
+            vines.push(vine);
+            this.activeVines.push(vine);
+        }
+        
+        return vines;
+    }
+    
+    // Vérifier si une liane touche le joueur
+    checkVineHit(playerX, playerY) {
+        for (const vine of this.activeVines) {
+            if (vine.hasHitPlayer) continue;
+            
+            const currentLength = Math.floor(vine.length * vine.progress);
+            for (let i = 1; i <= currentLength; i++) {
+                const vineX = vine.startX + vine.dx * i;
+                const vineY = vine.startY + vine.dy * i;
+                
+                if (vineX === playerX && vineY === playerY) {
+                    vine.hasHitPlayer = true;
+                    return vine.damage;
+                }
+            }
+        }
+        return 0;
+    }
+    
+    // Dégâts de contact (corps à corps)
+    getContactDamage() {
+        if (this.contactDamageTimer >= this.contactDamageInterval) {
+            this.contactDamageTimer = 0;
+            return Math.floor(this.damage * 0.5);
+        }
+        return 0;
+    }
+    
+    // Rendu de l'aura de rage
+    renderRageAura(ctx, screenX, screenY, cellSize) {
+        if (!this.isEnraged) return;
+        
+        const gradient = ctx.createRadialGradient(
+            screenX, screenY, 0,
+            screenX, screenY, this.rageAuraRadius
+        );
+        gradient.addColorStop(0, `rgba(255, 0, 0, 0)`);
+        gradient.addColorStop(0.5, `rgba(255, 0, 0, ${this.rageAuraOpacity * 0.5})`);
+        gradient.addColorStop(1, `rgba(139, 0, 0, ${this.rageAuraOpacity})`);
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, this.rageAuraRadius, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // Rendu des lianes
+    renderVines(ctx, camera, cellSize) {
+        for (const vine of this.activeVines) {
+            const currentLength = Math.floor(vine.length * vine.progress);
+            
+            for (let i = 1; i <= currentLength; i++) {
+                const vineX = vine.startX + vine.dx * i;
+                const vineY = vine.startY + vine.dy * i;
+                
+                const screenX = (vineX - camera.x) * cellSize + cellSize / 2;
+                const screenY = (vineY - camera.y) * cellSize + cellSize / 2;
+                
+                // Dessiner la liane
+                ctx.fillStyle = vine.progress >= 1 ? '#2d5016' : '#4a7023';
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, cellSize * 0.3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Épines
+                ctx.fillStyle = '#1a3009';
+                for (let j = 0; j < 4; j++) {
+                    const angle = (j / 4) * Math.PI * 2 + Date.now() / 500;
+                    const spikeX = screenX + Math.cos(angle) * cellSize * 0.35;
+                    const spikeY = screenY + Math.sin(angle) * cellSize * 0.35;
+                    ctx.beginPath();
+                    ctx.arc(spikeX, spikeY, cellSize * 0.08, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+    }
+}
+
+// Animation de liane pour le boss
+class VineAnimation extends Animation {
+    constructor(startX, startY, dx, dy, length, damage) {
+        super(startX, startY, 0.8);
+        this.dx = dx;
+        this.dy = dy;
+        this.length = length;
+        this.damage = damage;
+        this.hitPositions = [];
+    }
+    
+    render(ctx, camera, cellSize) {
+        const progress = Math.min(this.elapsed / (this.duration * 0.6), 1);
+        const currentLength = Math.floor(this.length * progress);
+        
+        for (let i = 1; i <= currentLength; i++) {
+            const vineX = this.x + this.dx * i;
+            const vineY = this.y + this.dy * i;
+            
+            const screenX = (vineX - camera.x) * cellSize + cellSize / 2;
+            const screenY = (vineY - camera.y) * cellSize + cellSize / 2;
+            
+            // Liane principale
+            const gradient = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, cellSize * 0.4);
+            gradient.addColorStop(0, '#4a7023');
+            gradient.addColorStop(1, '#2d5016');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, cellSize * 0.35, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Épines menaçantes
+            ctx.fillStyle = '#1a3009';
+            for (let j = 0; j < 6; j++) {
+                const angle = (j / 6) * Math.PI * 2 + this.elapsed * 3;
+                const spikeX = screenX + Math.cos(angle) * cellSize * 0.4;
+                const spikeY = screenY + Math.sin(angle) * cellSize * 0.4;
+                ctx.beginPath();
+                ctx.arc(spikeX, spikeY, cellSize * 0.1, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            this.hitPositions.push({ x: vineX, y: vineY });
+        }
+    }
+}
+
 class Healer {
     constructor(x, y) {
         this.x = x;
@@ -1330,6 +1647,11 @@ class Game {
         this.healers = []; // PNJ soigneurs
         this.healingRooms = []; // Salles de soins
         this.exit = null;
+        
+        // Boss avancé
+        this.currentBoss = null;
+        this.bossTransitioning = false;
+        this.bossTransitionBoss = null;
         
         this.keys = {};
         this.mousePos = { x: 0, y: 0 };
@@ -1808,16 +2130,32 @@ class Game {
         const isBossLevel = levelInZone === CONFIG.LEVELS_PER_ZONE;
         
         if (isBossLevel) {
-            // Spawner un boss au centre
-            const boss = new Enemy(
-                Math.floor(CONFIG.GRID_SIZE / 2),
-                Math.floor(CONFIG.GRID_SIZE / 2),
-                this.currentLevel,
-                zone,
-                true
-            );
+            let boss;
+            
+            // Spawner le boss approprié selon la zone
+            if (zone === 1) {
+                // Zone 1: Sylvanus - Boss de la Forêt (mécaniques spéciales)
+                boss = new ForestBoss(
+                    Math.floor(CONFIG.GRID_SIZE / 2),
+                    Math.floor(CONFIG.GRID_SIZE / 2),
+                    this.currentLevel,
+                    zone
+                );
+                this.addLog('⚠️ SYLVANUS LE GARDIEN APPARAÎT!', 'damage');
+            } else {
+                // Autres zones: Boss standard (pour l'instant)
+                boss = new Enemy(
+                    Math.floor(CONFIG.GRID_SIZE / 2),
+                    Math.floor(CONFIG.GRID_SIZE / 2),
+                    this.currentLevel,
+                    zone,
+                    true // isBoss = true
+                );
+                this.addLog('⚠️ BOSS APPARU!', 'damage');
+            }
+            
             this.enemies.push(boss);
-            this.addLog('⚠️ BOSS APPARU!', 'damage');
+            this.currentBoss = boss; // Référence pour les mécaniques avancées
         } else {
             // Nombre d'ennemis qui augmente avec le niveau
             // Niveau 1: ~8, Niveau 25: ~35, Niveau 50: ~60
@@ -2790,11 +3128,21 @@ class Game {
 
     // Terminer le dialogue avec le boss
     endBossDialogue() {
+        // Vérifier si c'était un dialogue de rage (transition de phase)
+        const wasRageDialogue = this.currentBossDialogue && this.currentBossDialogue.isRageDialogue;
+        
         this.currentBossDialogue = null;
         this.state = 'playing';
         this.showScreen('game-screen');
+        
+        // Réafficher l'image du héros si elle était cachée
+        document.getElementById('dialogue-boss-hero-image').style.display = '';
 
-        this.addLog('⚔️ Le combat commence!', 'damage');
+        if (wasRageDialogue) {
+            this.addLog('🔥 La phase 2 commence!', 'damage');
+        } else {
+            this.addLog('⚔️ Le combat commence!', 'damage');
+        }
     }
 
     // Créer des effets de sang quand le boss est vaincu
@@ -3308,6 +3656,11 @@ class Game {
     nextLevel() {
         this.currentLevel++;
         
+        // Réinitialiser le boss
+        this.currentBoss = null;
+        this.bossTransitioning = false;
+        this.bossTransitionBoss = null;
+        
         if (this.currentLevel > CONFIG.TOTAL_LEVELS) {
             this.victory();
             return;
@@ -3601,6 +3954,159 @@ class Game {
         }
     }
     
+    // ===== MÉTHODES DE GESTION DU BOSS AVANCÉ =====
+    
+    // Pause du jeu pour la transition de phase du boss
+    pauseGameForBossTransition(boss) {
+        this.bossTransitioning = true;
+        this.bossTransitionBoss = boss;
+        this.addLog('⚠️ LE BOSS ENTRE EN RAGE!', 'damage');
+        
+        // Afficher un dialogue de transition
+        this.showBossRageDialogue(boss);
+    }
+    
+    // Reprendre le jeu après la transition
+    resumeGameAfterBossTransition(boss) {
+        this.bossTransitioning = false;
+        this.bossTransitionBoss = null;
+        this.addLog('🔥 Phase 2: Le boss utilise maintenant des lianes!', 'damage');
+    }
+    
+    // Dialogue de rage du boss
+    showBossRageDialogue(boss) {
+        const zone = Math.ceil(this.currentLevel / CONFIG.LEVELS_PER_ZONE);
+        
+        const rageMessages = {
+            1: "RAAAAAAH!!!\n\n*L'écran tremble*\n\nVous pensez pouvoir me vaincre?!\n\nVous allez PÉRIR dans mes lianes!\n\nLA FORÊT VOUS ENGLOUTIRA!"
+        };
+        
+        const message = rageMessages[zone] || "VOUS ALLEZ PAYER!!!";
+        
+        // Utiliser le système de dialogue existant avec effets spéciaux
+        this.currentBossDialogue = {
+            messages: [{ speaker: 'boss', text: message }],
+            currentIndex: 0,
+            currentCharIndex: 0,
+            typingSpeed: 20,
+            isTyping: false,
+            isRageDialogue: true
+        };
+        
+        // Afficher l'écran de dialogue
+        const bossImage = document.getElementById('dialogue-boss-image');
+        const heroImage = document.getElementById('dialogue-boss-hero-image');
+        const bossName = document.getElementById('boss-name');
+        const continueBtn = document.getElementById('boss-dialogue-finish-btn');
+        
+        bossImage.src = `./pixel_art/boss_talk/boss_${zone}.png`;
+        bossName.textContent = `⚠️ GARDIEN EN RAGE ⚠️`;
+        heroImage.style.display = 'none';
+        continueBtn.style.display = 'none';
+        
+        this.showScreen('boss-dialogue');
+        this.state = 'boss_rage_dialogue';
+        
+        this.typeNextBossDialogueMessage();
+    }
+    
+    // Rendu des effets de boss (aura, lianes, secousse) - Spécifique au boss Forêt
+    renderBossEffects(ctx, camera, cellSize) {
+        if (!this.currentBoss) return;
+        
+        const boss = this.currentBoss;
+        
+        // Vérifier si c'est un boss avec effets visuels spéciaux
+        if (boss.bossType !== 'forest') return;
+        
+        // Rendu de l'aura de rage
+        if (boss.isEnraged) {
+            const screenX = (boss.x - camera.x) * cellSize + cellSize / 2;
+            const screenY = (boss.y - camera.y) * cellSize + cellSize / 2;
+            boss.renderRageAura(ctx, screenX, screenY, cellSize);
+        }
+        
+        // Rendu des lianes
+        if (boss.activeVines && boss.activeVines.length > 0) {
+            boss.renderVines(ctx, camera, cellSize);
+        }
+        
+        // Appliquer la secousse d'écran
+        if (boss.screenShakeIntensity > 0) {
+            const shakeX = (Math.random() - 0.5) * boss.screenShakeIntensity;
+            const shakeY = (Math.random() - 0.5) * boss.screenShakeIntensity;
+            ctx.translate(shakeX, shakeY);
+        }
+        
+        // Flash blanc
+        if (boss.flashWhiteIntensity > 0) {
+            ctx.fillStyle = `rgba(255, 255, 255, ${boss.flashWhiteIntensity})`;
+            ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+    }
+    
+    // Mise à jour spécifique au boss
+    updateBossLogic(deltaTime) {
+        if (!this.currentBoss || this.bossTransitioning) return;
+        
+        const boss = this.currentBoss;
+        
+        // Vérifier si c'est un boss avec mécaniques spéciales
+        if (boss.bossType !== 'forest') return; // Seulement pour le boss de la forêt
+        
+        const playerDist = Math.hypot(boss.x - this.player.x, boss.y - this.player.y);
+        
+        // Dégâts de contact (corps à corps)
+        if (playerDist <= 1.5) {
+            const contactDamage = boss.getContactDamage();
+            if (contactDamage > 0) {
+                const killed = this.player.takeDamage(contactDamage);
+                this.addFloatingText(this.player.x, this.player.y, `-${contactDamage} 👊`, '#ff4757');
+                if (killed) this.gameOver();
+            }
+        }
+        
+        // Phase 1: Projectiles
+        if (boss.phase === 1) {
+            const projectile = boss.fireProjectile(this.player.x, this.player.y);
+            if (projectile) {
+                const projectileAnim = new ProjectileAnimation(
+                    projectile.startX, projectile.startY,
+                    projectile.endX, projectile.endY,
+                    'magic',
+                    6
+                );
+                
+                projectileAnim.onComplete = () => {
+                    // Les dégâts ne sont appliqués qu'à la fin de l'animation
+                    const killed = this.player.takeDamage(projectile.damage);
+                    this.addFloatingText(this.player.x, this.player.y, `-${projectile.damage} 💥`, '#ff4757');
+                    this.addLog(`🔮 Projectile du boss: -${projectile.damage} HP`, 'damage');
+                    if (killed) this.gameOver();
+                };
+                
+                this.animations.push(projectileAnim);
+            }
+        }
+        
+        // Phase 2: Lianes
+        if (boss.phase === 2) {
+            const vines = boss.fireVines();
+            if (vines.length > 0) {
+                this.addLog('🌿 Le boss lance des lianes!', 'damage');
+            }
+            
+            // Vérifier les collisions avec les lianes
+            const vineDamage = boss.checkVineHit(this.player.x, this.player.y);
+            if (vineDamage > 0) {
+                const killed = this.player.takeDamage(vineDamage);
+                this.addFloatingText(this.player.x, this.player.y, `-${vineDamage} 🌿`, '#2d5016');
+                this.addLog(`🌿 Liane: -${vineDamage} HP`, 'damage');
+                if (killed) this.gameOver();
+            }
+        }
+    }
+    
     // Ajouter un texte flottant au-dessus d'une entité
     addFloatingText(x, y, text, color = '#fff', duration = 1.5) {
         this.floatingTexts.push({
@@ -3687,6 +4193,7 @@ class Game {
         this.player.updatePerks(deltaTime); // Mise à jour des perks
         this.updateMagicRingsCollision(); // Collision des anneaux magiques
         this.updateEnemies(deltaTime);
+        this.updateBossLogic(deltaTime); // Mise à jour spécifique au boss
 
         // Mettre à jour les soigneurs
         for (const healer of this.healers) {
@@ -4232,6 +4739,9 @@ class Game {
                 }
             }
         }
+
+        // Dessiner les effets du boss (aura, lianes, secousse)
+        this.renderBossEffects(ctx, this.camera, CONFIG.CELL_SIZE);
 
         // Dessiner les animations par-dessus tout
         for (const anim of this.animations) {
