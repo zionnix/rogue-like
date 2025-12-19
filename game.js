@@ -3483,3 +3483,81 @@ window.addEventListener('load', () => {
     game = new Game();
     window.game = game; // Rendre accessible depuis la console
 });
+
+// ===== COMMANDES DE DÉBOGAGE =====
+// Utilisez ces fonctions dans la console du navigateur (F12)
+
+/**
+ * Téléporter à un niveau spécifique
+ * Exemple: teleportToLevel(10) pour aller au niveau 10 (boss zone 1)
+ */
+window.teleportToLevel = function(level) {
+    if (!game) {
+        console.error('Le jeu n\'est pas initialisé');
+        return;
+    }
+
+    if (!game.player) {
+        console.error('Vous devez d\'abord sélectionner une classe et commencer une partie');
+        return;
+    }
+
+    console.log(`🎮 Téléportation au niveau ${level}...`);
+    game.currentLevel = level;
+    game.nextLevel();
+    console.log(`✅ Vous êtes maintenant au niveau ${level}`);
+};
+
+/**
+ * Ajouter un perk au joueur
+ * Exemple: addPerk('second_life') pour obtenir la seconde vie
+ * Perks disponibles: double_shot, double_strike, damage_boost, attack_speed,
+ *                    shield, critical, knockback, regeneration, fireball, second_life
+ */
+window.addPerk = function(perkId) {
+    if (!game || !game.player) {
+        console.error('Vous devez être en jeu');
+        return;
+    }
+
+    game.player.addPerk(perkId);
+    console.log(`✅ Perk ajouté: ${perkId}`);
+};
+
+/**
+ * Soigner le joueur à 100%
+ */
+window.heal = function() {
+    if (!game || !game.player) {
+        console.error('Vous devez être en jeu');
+        return;
+    }
+
+    game.player.health = game.player.maxHealth;
+    game.updateHUD();
+    console.log(`✅ Vie restaurée à ${game.player.maxHealth}`);
+};
+
+/**
+ * Obtenir des informations sur le niveau actuel
+ */
+window.gameInfo = function() {
+    if (!game) {
+        console.error('Le jeu n\'est pas initialisé');
+        return;
+    }
+
+    console.log('📊 Informations du jeu:');
+    console.log(`Niveau actuel: ${game.currentLevel}`);
+    console.log(`Zone: ${Math.ceil(game.currentLevel / CONFIG.LEVELS_PER_ZONE)}`);
+    const isBossLevel = ((game.currentLevel - 1) % CONFIG.LEVELS_PER_ZONE) === (CONFIG.LEVELS_PER_ZONE - 1);
+    console.log(`Niveau boss: ${isBossLevel ? 'Oui' : 'Non'}`);
+
+    if (game.player) {
+        console.log(`\n👤 Joueur:`);
+        console.log(`Classe: ${game.player.className}`);
+        console.log(`Vie: ${game.player.health}/${game.player.maxHealth}`);
+        console.log(`Niveau: ${game.player.level}`);
+        console.log(`Perks actifs:`, game.player.perks);
+    }
+};
