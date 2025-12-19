@@ -1686,8 +1686,8 @@ class Game {
             const newX = enemy.x + dirX;
             const newY = enemy.y + dirY;
 
-            // Vérifier que la nouvelle position est valide
-            if (this.isWalkable(newX, newY)) {
+            // Vérifier que la nouvelle position est valide (pas un mur, pas hors limites)
+            if (this.isWalkableForKnockback(newX, newY, enemy)) {
                 enemy.x = newX;
                 enemy.y = newY;
             } else {
@@ -1697,6 +1697,33 @@ class Game {
 
         // Effet visuel de knockback
         this.createKnockbackEffect(enemy.x, enemy.y);
+    }
+
+    // Vérifier si une case est accessible pour le knockback (murs seulement, pas les autres ennemis)
+    isWalkableForKnockback(x, y, movingEnemy) {
+        // Hors limites
+        if (x < 0 || x >= CONFIG.GRID_SIZE || y < 0 || y >= CONFIG.GRID_SIZE) {
+            return false;
+        }
+        
+        // Mur
+        if (this.dungeon.grid[y][x] === 1) {
+            return false;
+        }
+        
+        // Vérifier collision avec autres ennemis (pas soi-même)
+        for (const enemy of this.enemies) {
+            if (enemy !== movingEnemy && enemy.x === x && enemy.y === y) {
+                return false;
+            }
+        }
+        
+        // Vérifier collision avec le joueur
+        if (this.player.x === x && this.player.y === y) {
+            return false;
+        }
+        
+        return true;
     }
 
     createKnockbackEffect(x, y) {
@@ -1753,6 +1780,23 @@ class Game {
     }
 
     handleHealerInteraction(healer) {
+        // Vérifier que le joueur est dans la même pièce que le soigneur
+        const healerRoom = this.healingRooms.find(room => 
+            healer.x >= room.x && healer.x < room.x + room.width &&
+            healer.y >= room.y && healer.y < room.y + room.height
+        );
+        
+        if (healerRoom) {
+            const playerInRoom = 
+                this.player.x >= healerRoom.x && this.player.x < healerRoom.x + healerRoom.width &&
+                this.player.y >= healerRoom.y && this.player.y < healerRoom.y + healerRoom.height;
+            
+            if (!playerInRoom) {
+                this.addLog('💚 Approchez-vous du soigneur pour être soigné!', 'info');
+                return;
+            }
+        }
+
         if (healer.hasHealed) {
             this.addLog('💚 Ce soigneur vous a déjà aidé!', 'info');
             return;
