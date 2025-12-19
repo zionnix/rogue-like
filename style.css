@@ -800,10 +800,14 @@ body {
   transform: translateX(-50%);
   z-index: 100;
   opacity: 0.7;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 .credits-skip:hover {
   opacity: 1;
+  transform: translateX(-50%) translateY(-4px);
+}
+.credits-skip:active {
+  transform: translateX(-50%) translateY(0);
 }
 
 button {
