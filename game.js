@@ -1930,8 +1930,10 @@ class Game {
 
     // Afficher le dialogue de zone
     showZoneDialogue(zone, classType) {
+        console.log('showZoneDialogue called with zone:', zone, 'classType:', classType);
         const zoneData = CONFIG.ZONES[zone];
         const dialogues = CONFIG.HERO_DIALOGUES[classType]?.[zone];
+        console.log('Zone data:', zoneData, 'Dialogues:', dialogues);
         
         if (!dialogues || dialogues.length === 0) {
             this.finishDialogue();
@@ -2018,8 +2020,10 @@ class Game {
     }
     
     startGame(classType) {
+        console.log('startGame called with classType:', classType);
         this.currentLevel = 1;
         this.generateLevel();
+        console.log('Level generated, dungeon:', this.dungeon);
         
         const spawn = this.dungeon.findSpawnPoint();
         this.player = new Player(spawn.x, spawn.y, classType);
