@@ -469,7 +469,7 @@ class Player extends Entity {
     // Mise à jour des effets de perks
     updatePerks(deltaTime) {
         // Bouclier
-        if (this.perks['shield']) {
+        if (this.perkLevels['shield']) {
             // Cooldown
             if (this.perkEffects.shieldCooldown > 0) {
                 this.perkEffects.shieldCooldown -= deltaTime;
@@ -2080,13 +2080,13 @@ class Game {
             }
 
             // Vérifier si le perk n'est pas au niveau max
-            const currentLevel = this.player.perks[perk.id] || 0;
+            const currentLevel = this.player.perkLevels[perk.id] || 0;
             if (currentLevel >= perk.maxLevel) {
                 continue;
             }
 
             // Vérifier la seconde vie (unique)
-            if (perk.id === 'second_life' && this.player.perks[perk.id]) {
+            if (perk.id === 'second_life' && this.player.perkLevels[perk.id]) {
                 continue;
             }
 
@@ -2135,7 +2135,7 @@ class Game {
         const card = document.createElement('div');
         card.className = `perk-card rarity-${perk.rarity.toLowerCase()}`;
 
-        const currentLevel = this.player.perks[perk.id] || 0;
+        const currentLevel = this.player.perkLevels[perk.id] || 0;
         const nextLevel = currentLevel + 1;
 
         const icons = {
