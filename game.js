@@ -487,6 +487,10 @@ class Player extends Entity {
         // Cooldown boules de feu
         if (this.perkEffects.fireballCooldown > 0) {
             this.perkEffects.fireballCooldown -= deltaTime;
+        } else if (this.perkEffects.fireball > 0) {
+            // Tirer une fireball sur l'ennemi le plus proche
+            this.fireAutomaticFireball();
+            this.perkEffects.fireballCooldown = 5; // 5 secondes entre chaque fireball
         }
 
         // Effets de status (brûlure, etc.)
@@ -506,6 +510,48 @@ class Player extends Entity {
             if (effect.elapsed >= effect.duration) {
                 this.statusEffects.splice(i, 1);
             }
+        }
+    }
+
+    fireAutomaticFireball() {
+        // Trouver l'ennemi le plus proche
+        const nearestEnemy = game.findNearestEnemy(this.x, this.y);
+
+        if (nearestEnemy) {
+            // Créer une animation de fireball
+            const fireballAnimation = new ProjectileAnimation(
+                this.x, this.y,
+                nearestEnemy.x, nearestEnemy.y,
+                'fireball',
+                8 // Vitesse moyenne
+            );
+
+            // Appliquer les dégâts et l'effet de brûlure à l'arrivée
+            fireballAnimation.onComplete = () => {
+                if (game.enemies.includes(nearestEnemy)) {
+                    const fireballDamage = 20 * this.perkEffects.fireball;
+                    const killed = nearestEnemy.takeDamage(fireballDamage);
+
+                    // Afficher les dégâts
+                    game.addFloatingText(nearestEnemy.x, nearestEnemy.y, `-${fireballDamage} 🔥`, '#ff6b00');
+
+                    // Appliquer l'effet de brûlure
+                    if (!killed) {
+                        nearestEnemy.applyStatusEffect({
+                            type: 'burn',
+                            duration: 3,
+                            data: { damagePerSecond: 5 }
+                        });
+                    } else {
+                        // Retirer l'ennemi mort
+                        game.enemies = game.enemies.filter(e => e !== nearestEnemy);
+                        this.gainXP(nearestEnemy.xpValue);
+                    }
+                }
+            };
+
+            game.animations.push(fireballAnimation);
+            game.addLog('🔥 Fireball automatique!', 'damage');
         }
     }
 
@@ -705,14 +751,16 @@ class ProjectileAnimation extends Animation {
         const progress = Math.min(this.elapsed / this.duration, 1);
         const currentX = this.startX + (this.endX - this.startX) * progress;
         const currentY = this.startY + (this.endY - this.startY) * progress;
-        
+
         const screenX = (currentX - camera.x) * cellSize + cellSize / 2;
         const screenY = (currentY - camera.y) * cellSize + cellSize / 2;
-        
+
         if (this.type === 'arrow') {
             this.renderArrow(ctx, screenX, screenY, cellSize);
         } else if (this.type === 'magic') {
             this.renderMagicBall(ctx, screenX, screenY, cellSize);
+        } else if (this.type === 'fireball') {
+            this.renderFireball(ctx, screenX, screenY, cellSize);
         }
     }
     
@@ -781,9 +829,68 @@ class ProjectileAnimation extends Animation {
             const angle = (this.elapsed * 5 + i * Math.PI * 2 / 3);
             const px = x + Math.cos(angle) * size * 0.8;
             const py = y + Math.sin(angle) * size * 0.8;
-            
+
             ctx.fillStyle = 'rgba(173, 216, 230, 0.6)';
             ctx.fillRect(px - 1, py - 1, 2, 2);
+        }
+    }
+
+    renderFireball(ctx, x, y, cellSize) {
+        const progress = this.elapsed / this.duration;
+        const size = cellSize * 0.5;
+
+        // Effet de pulsation plus intense
+        const pulse = 1 + Math.sin(this.elapsed * 15) * 0.3;
+
+        // Traînée de feu
+        for (let i = 0; i < 5; i++) {
+            const trailProgress = progress - i * 0.05;
+            if (trailProgress > 0) {
+                const trailX = this.startX + (this.endX - this.startX) * trailProgress;
+                const trailY = this.startY + (this.endY - this.startY) * trailProgress;
+                const trailScreenX = (trailX - game.camera.x) * cellSize + cellSize / 2;
+                const trailScreenY = (trailY - game.camera.y) * cellSize + cellSize / 2;
+
+                const alpha = 0.3 * (1 - i * 0.2);
+                ctx.fillStyle = `rgba(255, 107, 0, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(trailScreenX, trailScreenY, size * 0.4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Aura extérieure (orange/rouge)
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, size * pulse);
+        gradient.addColorStop(0, 'rgba(255, 69, 0, 0.9)');
+        gradient.addColorStop(0.4, 'rgba(255, 140, 0, 0.6)');
+        gradient.addColorStop(0.7, 'rgba(255, 69, 0, 0.3)');
+        gradient.addColorStop(1, 'rgba(255, 69, 0, 0)');
+
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(x, y, size * pulse, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Boule centrale (rouge-orange)
+        ctx.fillStyle = '#ff4500';
+        ctx.beginPath();
+        ctx.arc(x, y, size * 0.6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Centre brillant (jaune)
+        ctx.fillStyle = '#ffff00';
+        ctx.beginPath();
+        ctx.arc(x - size * 0.15, y - size * 0.15, size * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Flammes/particules autour
+        for (let i = 0; i < 5; i++) {
+            const angle = (this.elapsed * 10 + i * Math.PI * 2 / 5);
+            const px = x + Math.cos(angle) * size * 0.7;
+            const py = y + Math.sin(angle) * size * 0.7;
+
+            ctx.fillStyle = 'rgba(255, 215, 0, 0.8)';
+            ctx.fillRect(px - 2, py - 2, 4, 4);
         }
     }
 }
@@ -1460,13 +1567,24 @@ class Game {
                 const applyDamage = () => {
                     // Vérifier que la cible existe toujours
                     if (!this.enemies.includes(target)) return;
-                    
-                    const damage = this.player.damage;
+
+                    // Calculer les dégâts avec critical
+                    const { damage, isCritical } = this.player.getCalculatedDamage();
                     const killed = target.takeDamage(damage);
-                    
-                    // Afficher les dégâts au-dessus de l'ennemi
-                    this.addFloatingText(target.x, target.y, `-${damage}`, '#ff6b6b');
-                    
+
+                    // Afficher les dégâts au-dessus de l'ennemi avec style critique
+                    if (isCritical) {
+                        this.addFloatingText(target.x, target.y, `-${damage} CRIT!`, '#ffcc00');
+                        this.createCriticalEffect(target.x, target.y);
+                    } else {
+                        this.addFloatingText(target.x, target.y, `-${damage}`, '#ff6b6b');
+                    }
+
+                    // Appliquer le knockback si le perk est actif
+                    if (this.player.perkEffects.knockback && !killed) {
+                        this.applyKnockback(target, this.player.perkEffects.knockback);
+                    }
+
                     if (killed) {
                         this.enemies = this.enemies.filter(e => e !== target);
                         this.player.gainXP(target.xpValue);
@@ -1476,49 +1594,151 @@ class Game {
                     }
                 };
                 
-                let animation;
-                
-                // Créer l'animation selon la classe
-                if (this.player.classType === 'archer') {
-                    // Animation de flèche
-                    animation = new ProjectileAnimation(
-                        this.player.x, this.player.y,
-                        targetX, targetY,
-                        'arrow'
-                    );
-                } else if (this.player.classType === 'mage') {
-                    // Animation de boule magique
-                    animation = new ProjectileAnimation(
-                        this.player.x, this.player.y,
-                        targetX, targetY,
-                        'magic',
-                        10 // Plus lent que la flèche
-                    );
-                } else if (this.player.classType === 'knight') {
-                    // Animation de coup d'épée
-                    animation = new MeleeAnimation(
-                        this.player.x, this.player.y,
-                        targetX, targetY,
-                        'knight'
-                    );
-                } else if (this.player.classType === 'tank') {
-                    // Animation de coup de bouclier
-                    animation = new MeleeAnimation(
-                        this.player.x, this.player.y,
-                        targetX, targetY,
-                        'tank'
-                    );
+                // Déterminer le nombre d'attaques (double_shot ou double_strike)
+                const numAttacks = (this.player.classType === 'archer' && this.player.perkEffects.double_shot) ? 2 :
+                                  ((this.player.classType === 'knight' || this.player.classType === 'tank') &&
+                                   this.player.perkEffects.double_strike) ? 2 : 1;
+
+                // Créer les animations pour chaque attaque
+                for (let attackNum = 0; attackNum < numAttacks; attackNum++) {
+                    let animation;
+
+                    // Délai entre les attaques si double
+                    const delay = attackNum * 0.15; // 150ms entre chaque
+
+                    // Créer l'animation selon la classe
+                    if (this.player.classType === 'archer') {
+                        // Animation de flèche
+                        animation = new ProjectileAnimation(
+                            this.player.x, this.player.y,
+                            targetX, targetY,
+                            'arrow'
+                        );
+                    } else if (this.player.classType === 'mage') {
+                        // Animation de boule magique
+                        animation = new ProjectileAnimation(
+                            this.player.x, this.player.y,
+                            targetX, targetY,
+                            'magic',
+                            10 // Plus lent que la flèche
+                        );
+                    } else if (this.player.classType === 'knight') {
+                        // Animation de coup d'épée
+                        animation = new MeleeAnimation(
+                            this.player.x, this.player.y,
+                            targetX, targetY,
+                            'knight'
+                        );
+                    } else if (this.player.classType === 'tank') {
+                        // Animation de coup de bouclier
+                        animation = new MeleeAnimation(
+                            this.player.x, this.player.y,
+                            targetX, targetY,
+                            'tank'
+                        );
+                    }
+
+                    // Attacher la callback de dégâts à l'animation
+                    if (animation) {
+                        // Appliquer un délai si c'est une attaque supplémentaire
+                        if (delay > 0) {
+                            setTimeout(() => {
+                                animation.onComplete = applyDamage;
+                                this.animations.push(animation);
+                            }, delay * 1000);
+                        } else {
+                            animation.onComplete = applyDamage;
+                            this.animations.push(animation);
+                        }
+                    }
                 }
-                
-                // Attacher la callback de dégâts à l'animation
-                if (animation) {
-                    animation.onComplete = applyDamage;
-                    this.animations.push(animation);
-                }
-                
+
                 // Déclencher le cooldown d'attaque
                 this.player.attack();
             }
+        }
+    }
+
+    applyKnockback(enemy, distance) {
+        // Calculer la direction du knockback
+        const dx = enemy.x - this.player.x;
+        const dy = enemy.y - this.player.y;
+        const length = Math.sqrt(dx * dx + dy * dy);
+
+        if (length === 0) return;
+
+        // Normaliser et multiplier par la distance
+        const dirX = Math.round(dx / length);
+        const dirY = Math.round(dy / length);
+
+        // Pousser l'ennemi
+        for (let i = 0; i < distance; i++) {
+            const newX = enemy.x + dirX;
+            const newY = enemy.y + dirY;
+
+            // Vérifier que la nouvelle position est valide
+            if (this.isWalkable(newX, newY)) {
+                enemy.x = newX;
+                enemy.y = newY;
+            } else {
+                break; // Arrêter si on touche un mur
+            }
+        }
+
+        // Effet visuel de knockback
+        this.createKnockbackEffect(enemy.x, enemy.y);
+    }
+
+    createKnockbackEffect(x, y) {
+        // Créer des particules pour l'effet de knockback
+        for (let i = 0; i < 5; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const offsetX = Math.cos(angle) * 0.3;
+            const offsetY = Math.sin(angle) * 0.3;
+
+            this.floatingTexts.push({
+                x: x + offsetX,
+                y: y + offsetY,
+                text: '💨',
+                color: '#95a5a6',
+                velocity: { x: offsetX, y: offsetY },
+                life: 0.6,
+                maxLife: 0.6
+            });
+        }
+    }
+
+    findNearestEnemy(x, y) {
+        let nearestEnemy = null;
+        let minDistance = Infinity;
+
+        for (const enemy of this.enemies) {
+            const distance = Math.hypot(enemy.x - x, enemy.y - y);
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearestEnemy = enemy;
+            }
+        }
+
+        return nearestEnemy;
+    }
+
+    createCriticalEffect(x, y) {
+        // Créer un effet visuel pour les coups critiques
+        for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * Math.PI * 2;
+            const offsetX = Math.cos(angle) * 0.5;
+            const offsetY = Math.sin(angle) * 0.5;
+
+            this.floatingTexts.push({
+                x: x + offsetX,
+                y: y + offsetY,
+                text: '⚡',
+                color: '#ffcc00',
+                velocity: { x: offsetX * 0.5, y: offsetY * 0.5 },
+                life: 0.5,
+                maxLife: 0.5
+            });
         }
     }
 
@@ -1563,10 +1783,30 @@ class Game {
         }
     }
 
+    createReviveEffect(x, y) {
+        // Créer un effet visuel de résurrection
+        for (let i = 0; i < 12; i++) {
+            const angle = (i / 12) * Math.PI * 2;
+            const offsetX = Math.cos(angle) * 0.7;
+            const offsetY = Math.sin(angle) * 0.7;
+
+            this.floatingTexts.push({
+                x: x + offsetX,
+                y: y + offsetY,
+                text: '💛',
+                color: '#f39c12',
+                duration: 1.5,
+                elapsed: 0,
+                offsetY: 0
+            });
+        }
+    }
+
     updateEnemies(deltaTime) {
         for (const enemy of this.enemies) {
             enemy.update(deltaTime);
-            
+            enemy.updateStatusEffects(deltaTime); // Mettre à jour les effets de status (brûlure, etc.)
+
             // Trouver la salle du joueur
             const playerRoom = this.findRoomAt(this.player.x, this.player.y);
             const enemyRoom = this.findRoomAt(enemy.x, enemy.y);
@@ -1974,7 +2214,7 @@ class Game {
             if (value > 0) {
                 const totalBonus = upgradeValues[key] * value;
                 const bonusText = key === 'speed' ? `${totalBonus}` : `+${totalBonus}`;
-                
+
                 const div = document.createElement('div');
                 div.className = 'upgrade-item';
                 div.setAttribute('data-tooltip', `${bonusText} ${upgradeUnits[key]}`);
@@ -1984,6 +2224,30 @@ class Game {
                 `;
                 upgradesList.appendChild(div);
             }
+        }
+
+        // Afficher les perks actifs
+        for (const perk of this.player.perks) {
+            const div = document.createElement('div');
+            div.className = 'upgrade-item perk-item';
+            div.style.borderColor = CONFIG.RARITY[perk.rarity].color;
+
+            let perkText = `${perk.icon} ${perk.name}`;
+            if (perk.level > 1) {
+                perkText += ` (Niv. ${perk.level})`;
+            }
+
+            div.textContent = perkText;
+            upgradesList.appendChild(div);
+        }
+
+        // Afficher le statut du shield si actif
+        if (this.player.perkEffects.shieldActive) {
+            const shieldDiv = document.createElement('div');
+            shieldDiv.className = 'upgrade-item shield-status';
+            shieldDiv.style.color = '#3498db';
+            shieldDiv.textContent = '🛡️ BOUCLIER ACTIF';
+            upgradesList.appendChild(shieldDiv);
         }
     }
     
@@ -2051,13 +2315,20 @@ class Game {
     }
     
     gameLoop(currentTime) {
-        if (this.state !== 'playing') return;
+        // Continue la boucle même en pause
+        requestAnimationFrame((time) => this.gameLoop(time));
+
+        // Ne pas mettre à jour le jeu si pas en mode 'playing'
+        if (this.state !== 'playing') {
+            return;
+        }
 
         const deltaTime = (currentTime - this.lastTime) / 1000;
         this.lastTime = currentTime;
 
         // Mise à jour
         this.player.update(deltaTime);
+        this.player.updatePerks(deltaTime); // Mise à jour des perks
         this.updateEnemies(deltaTime);
 
         // Mettre à jour les soigneurs
@@ -2096,8 +2367,6 @@ class Game {
         
         // Rendu
         this.render();
-        
-        requestAnimationFrame((time) => this.gameLoop(time));
     }
     
     render() {
@@ -2360,13 +2629,56 @@ class Game {
         } else {
             ctx.fillStyle = this.player.color;
             ctx.fillRect(
-                px - playerSpriteOffset, 
-                py - playerSpriteOffset, 
-                CONFIG.SPRITE_SIZE, 
+                px - playerSpriteOffset,
+                py - playerSpriteOffset,
+                CONFIG.SPRITE_SIZE,
                 CONFIG.SPRITE_SIZE
             );
         }
-        
+
+        // Effet visuel du bouclier si actif
+        if (this.player.perkEffects.shieldActive) {
+            const shieldPulse = 1 + Math.sin(Date.now() / 200) * 0.1;
+            const shieldRadius = (CONFIG.CELL_SIZE * 0.7) * shieldPulse;
+
+            // Aura du bouclier
+            const gradient = ctx.createRadialGradient(
+                px + CONFIG.CELL_SIZE / 2,
+                py + CONFIG.CELL_SIZE / 2,
+                shieldRadius * 0.5,
+                px + CONFIG.CELL_SIZE / 2,
+                py + CONFIG.CELL_SIZE / 2,
+                shieldRadius
+            );
+            gradient.addColorStop(0, 'rgba(52, 152, 219, 0.4)');
+            gradient.addColorStop(0.7, 'rgba(52, 152, 219, 0.2)');
+            gradient.addColorStop(1, 'rgba(52, 152, 219, 0)');
+
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(
+                px + CONFIG.CELL_SIZE / 2,
+                py + CONFIG.CELL_SIZE / 2,
+                shieldRadius,
+                0,
+                Math.PI * 2
+            );
+            ctx.fill();
+
+            // Cercle du bouclier
+            ctx.strokeStyle = 'rgba(52, 152, 219, 0.8)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(
+                px + CONFIG.CELL_SIZE / 2,
+                py + CONFIG.CELL_SIZE / 2,
+                shieldRadius * 0.9,
+                0,
+                Math.PI * 2
+            );
+            ctx.stroke();
+        }
+
         // Indicateur de portée
         if (this.player.range !== Infinity) {
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
