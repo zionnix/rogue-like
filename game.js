@@ -2075,6 +2075,8 @@ class Game {
                         if (target.isBoss) {
                             this.defeatedBoss = target;
                             this.defeatedBoss.zone = target.zone; // Garder la zone
+                            // Sauvegarder l'XP pour le donner après le dialogue
+                            this.defeatedBoss.xpValue = target.xpValue;
                             // Ajouter des effets de sang
                             this.createBloodEffects(target.x, target.y);
                             // Retarder la suppression du boss pour l'animation
@@ -2082,13 +2084,13 @@ class Game {
                                 this.showBossDefeatDialogue();
                             }, 500);
                         } else {
+                            // Ennemis normaux: donner l'XP immédiatement
                             this.enemies = this.enemies.filter(e => e !== target);
+                            this.player.gainXP(target.xpValue);
+                            // Afficher l'XP gagné au-dessus du joueur
+                            const xpText = target.xpValue === 'level' ? 'LEVEL UP!' : `+${target.xpValue} XP`;
+                            this.addFloatingText(this.player.x, this.player.y, xpText, '#ffd93d');
                         }
-
-                        this.player.gainXP(target.xpValue);
-                        // Afficher l'XP gagné au-dessus du joueur
-                        const xpText = target.xpValue === 'level' ? 'LEVEL UP!' : `+${target.xpValue} XP`;
-                        this.addFloatingText(this.player.x, this.player.y, xpText, '#ffd93d');
                     }
                 };
                 
@@ -3049,8 +3051,13 @@ class Game {
 
     // Terminer le dialogue de défaite du boss
     endBossDefeatDialogue() {
-        // Supprimer le boss
+        // Donner l'XP du boss APRÈS le dialogue
         if (this.defeatedBoss) {
+            this.player.gainXP(this.defeatedBoss.xpValue);
+            const xpText = this.defeatedBoss.xpValue === 'level' ? 'LEVEL UP!' : `+${this.defeatedBoss.xpValue} XP`;
+            this.addFloatingText(this.player.x, this.player.y, xpText, '#ffd93d');
+
+            // Supprimer le boss
             this.enemies = this.enemies.filter(e => e !== this.defeatedBoss);
             this.defeatedBoss = null;
         }
@@ -4321,24 +4328,24 @@ window.killAllEnemies = function() {
         // Si c'est un boss, déclencher le dialogue de défaite
         game.defeatedBoss = boss;
         game.defeatedBoss.zone = boss.zone;
+        game.defeatedBoss.xpValue = boss.xpValue; // Sauvegarder l'XP pour après le dialogue
 
         // Créer des effets de sang
         game.createBloodEffects(boss.x, boss.y);
 
-        // Tuer les autres ennemis normalement
+        // Tuer les autres ennemis normalement et leur donner l'XP
         game.enemies.forEach(enemy => {
             if (!enemy.isBoss) {
                 enemy.health = 0;
+                // Donner l'XP des ennemis normaux
+                game.player.gainXP(enemy.xpValue);
             }
         });
 
         // Supprimer seulement les ennemis normaux
         game.enemies = game.enemies.filter(enemy => enemy.health > 0 || enemy.isBoss);
 
-        // Donner l'XP du boss
-        game.player.gainXP(boss.xpValue);
-        const xpText = boss.xpValue === 'level' ? 'LEVEL UP!' : `+${boss.xpValue} XP`;
-        game.addFloatingText(game.player.x, game.player.y, xpText, '#ffd93d');
+        // NE PAS donner l'XP du boss maintenant - elle sera donnée après le dialogue
 
         console.log(`💀 ${enemyCount - 1} ennemi(s) éliminé(s)!`);
         console.log(`👑 Boss détecté - Lancement du dialogue de défaite...`);
