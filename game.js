@@ -746,12 +746,24 @@ class Game {
             window.close();
         });
         
-        // Boutons retour
+        // Boutons retour et navigation lore
         document.getElementById('lore-back-btn').addEventListener('click', () => {
             this.showScreen('main-menu');
         });
+
+        document.getElementById('lore-next-btn').addEventListener('click', () => {
+            this.showScreen('lore-screen-2');
+        });
+
+        document.getElementById('lore-prev-btn').addEventListener('click', () => {
+            this.showScreen('lore-screen');
+        });
+
+        document.getElementById('lore-back-btn-2').addEventListener('click', () => {
+            this.showScreen('main-menu');
+        });
         
-        document.getElementById('credits-back-btn').addEventListener('click', () => {
+        document.getElementById('credits-skip-btn').addEventListener('click', () => {
             this.showScreen('main-menu');
         });
         
