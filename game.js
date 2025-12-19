@@ -1339,9 +1339,15 @@ class Game {
         
         // Système d'animations
         this.animations = [];
-        
+
         // Textes flottants (dégâts, XP, etc.)
         this.floatingTexts = [];
+
+        // Particules (sang, etc.)
+        this.particles = [];
+
+        // Taches de sang au sol
+        this.bloodStains = [];
         
         // Charger les sprites des personnages
         this.sprites = {
@@ -1383,34 +1389,34 @@ class Game {
         
         // Zone 1 - Mélée
         const melee1 = new Image();
-        melee1.src = './pixel_art/ennemi/green_knif_men.png';
+        melee1.src = './pixel_art/ennemi/zone 1/green_knif_men.png';
         this.enemySprites[1].melee.push(melee1);
-        
+
         const melee2 = new Image();
-        melee2.src = './pixel_art/ennemi/human_mad.png';
+        melee2.src = './pixel_art/ennemi/zone 1/human_mad.png';
         this.enemySprites[1].melee.push(melee2);
-        
+
         // Zone 1 - Arché (ranged)
         const ranged1 = new Image();
-        ranged1.src = './pixel_art/ennemi/witch.png';
+        ranged1.src = './pixel_art/ennemi/zone 1/witch.png';
         this.enemySprites[1].ranged.push(ranged1);
-        
+
         const ranged2 = new Image();
-        ranged2.src = './pixel_art/ennemi/gobelin_witch.png';
+        ranged2.src = './pixel_art/ennemi/zone 1/gobelin_witch.png';
         this.enemySprites[1].ranged.push(ranged2);
-        
+
         const ranged3 = new Image();
-        ranged3.src = './pixel_art/ennemi/gun_gobelin.png';
+        ranged3.src = './pixel_art/ennemi/zone 1/gun_gobelin.png';
         this.enemySprites[1].ranged.push(ranged3);
-        
+
         // Zone 1 - Tank
         const tank1 = new Image();
-        tank1.src = './pixel_art/ennemi/tank_monster.png';
+        tank1.src = './pixel_art/ennemi/zone 1/tank_monster.png';
         this.enemySprites[1].tank.push(tank1);
-        
+
         // Zone 1 - Small (rapide)
         const small1 = new Image();
-        small1.src = './pixel_art/ennemi/crazy_gobelin.png';
+        small1.src = './pixel_art/ennemi/zone 1/crazy_gobelin.png';
         this.enemySprites[1].small.push(small1);
         
         this.setupEventListeners();
@@ -2065,7 +2071,20 @@ class Game {
                     }
 
                     if (killed) {
-                        this.enemies = this.enemies.filter(e => e !== target);
+                        // Si c'est un boss, déclencher le dialogue de défaite
+                        if (target.isBoss) {
+                            this.defeatedBoss = target;
+                            this.defeatedBoss.zone = target.zone; // Garder la zone
+                            // Ajouter des effets de sang
+                            this.createBloodEffects(target.x, target.y);
+                            // Retarder la suppression du boss pour l'animation
+                            setTimeout(() => {
+                                this.showBossDefeatDialogue();
+                            }, 500);
+                        } else {
+                            this.enemies = this.enemies.filter(e => e !== target);
+                        }
+
                         this.player.gainXP(target.xpValue);
                         // Afficher l'XP gagné au-dessus du joueur
                         const xpText = target.xpValue === 'level' ? 'LEVEL UP!' : `+${target.xpValue} XP`;
@@ -2411,12 +2430,12 @@ class Game {
         const continueBtn = document.getElementById('second-dialogue-finish-btn');
 
         // Images
-        angelImage.src = './pixel_art/helping/angel.png';
+        angelImage.src = './pixel_art/helping_talk/angel.png';
         const heroImageMap = {
-            archer: './pixel_art/hero/archer.png',
-            knight: './pixel_art/hero/knight.png',
-            mage: './pixel_art/hero/magic men.png',
-            tank: './pixel_art/hero/tank.png'
+            archer: './pixel_art/heros_talk/archer.png',
+            knight: './pixel_art/heros_talk/knight.png',
+            mage: './pixel_art/heros_talk/magic men.png',
+            tank: './pixel_art/heros_talk/tank.png'
         };
         heroImage.src = heroImageMap[this.player.classType];
 
@@ -2657,10 +2676,10 @@ class Game {
         bossName.textContent = `Gardien de la Zone ${zone}`;
 
         const heroImageMap = {
-            archer: './pixel_art/hero/archer.png',
-            knight: './pixel_art/hero/knight.png',
-            mage: './pixel_art/hero/magic men.png',
-            tank: './pixel_art/hero/tank.png'
+            archer: './pixel_art/heros_talk/archer.png',
+            knight: './pixel_art/heros_talk/knight.png',
+            mage: './pixel_art/heros_talk/magic men.png',
+            tank: './pixel_art/heros_talk/tank.png'
         };
         heroImage.src = heroImageMap[this.player.classType];
         heroName.textContent = this.player.className;
@@ -2774,6 +2793,277 @@ class Game {
         this.showScreen('game-screen');
 
         this.addLog('⚔️ Le combat commence!', 'damage');
+    }
+
+    // Créer des effets de sang quand le boss est vaincu
+    createBloodEffects(x, y) {
+        // Créer plusieurs particules de sang
+        for (let i = 0; i < 20; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 2 + Math.random() * 3;
+            const distance = Math.random() * 2;
+
+            this.particles.push({
+                x: x,
+                y: y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                life: 1.5,
+                maxLife: 1.5,
+                color: '#8B0000', // Rouge sang foncé
+                size: 3 + Math.random() * 4,
+                type: 'blood'
+            });
+        }
+
+        // Ajouter une tache de sang permanente au sol
+        if (!this.bloodStains) this.bloodStains = [];
+        this.bloodStains.push({
+            x: x,
+            y: y,
+            size: 1.5,
+            alpha: 0.7
+        });
+    }
+
+    // Afficher le dialogue de défaite du boss
+    showBossDefeatDialogue() {
+        if (!this.defeatedBoss) return;
+
+        const zone = this.defeatedBoss.zone;
+
+        // Dialogues de défaite du boss zone 1 - 5 variantes
+        const bossDefeatMessages = {
+            1: [
+                "Impossible…\n\nComment… un mortel…\n\nLes ténèbres… m'abandonnent…\n\nTu… es plus fort… que je ne pensais…",
+                "Je… tombe…\n\nMais d'autres viendront…\n\nPlus puissants… plus sombres…\n\nCe n'est… que le début…",
+                "Tu m'as vaincu…\n\nMais à quel prix…\n\nLes ombres… se souviendront de toi…\n\nElles… te traqueront…",
+                "Ma fin… n'est qu'un commencement…\n\nLa vraie obscurité… t'attend…\n\nProfite… de ta victoire… éphémère…",
+                "Je… ne suis qu'un gardien…\n\nLe véritable maître… des ténèbres…\n\nT'attend… plus loin…\n\nSi… tu arrives jusque-là…"
+            ]
+        };
+
+        // Dialogues spéciaux défaite pour Archer et Boss 1 (amoureux)
+        const archerBoss1DefeatRomance = [
+            "Ainsi… tu m'as vaincu…\n\nC'est… étrangement apaisant…\n\nDe tomber… par ta main…\n\nVa… sauve-le…\n\nEt… sois heureuse…",
+            "Je savais… que ce jour viendrait…\n\nMon cœur… t'a trahi…\n\nJe ne pouvais… me battre… vraiment…\n\nPas contre toi…\n\nAdieu… mon impossible amour…",
+            "Ton regard… même maintenant…\n\nMe hante…\n\nJe… je suis content…\n\nQue ce soit toi…\n\nQui mette fin… à ma souffrance…",
+            "Dans… un autre monde…\n\nNous aurions pu…\n\nMais ici… tu as gagné…\n\nVa… je ne te retiens plus…\n\nOublie-moi…",
+            "Mes dernières pensées… sont pour toi…\n\nPas de regrets…\n\nTu m'as libéré… de ce fardeau…\n\nMerci… et pardon…\n\nPour tout…"
+        ];
+
+        const archerBoss1DefeatHeroResponses = [
+            "Je suis… désolée…\n\nTu ne méritais pas ça…\n\nMais je n'avais pas le choix…\n\nRepose en paix…\n\nJe ne t'oublierai jamais…",
+            "Pardonne-moi…\n\nDans un autre monde… peut-être…\n\nMais pas dans celui-ci…\n\nAdieu… mon ami… mon ennemi…\n\nMon… presque amour…",
+            "Tes mots… me brisent le cœur…\n\nPlus que n'importe quelle blessure…\n\nJe continuerai… mais une partie de moi…\n\nReste ici… avec toi…\n\nPour toujours…",
+            "Ne dis pas ça…\n\nJe… je me souviendrai de toi…\n\nDe nous… de ce qui aurait pu être…\n\nRepose… je porterai ce poids…\n\nToute ma vie…",
+            "Merci… pour ces mots…\n\nIls rendent tout plus difficile…\n\nMais aussi… plus supportable…\n\nAdieu…\n\nMon cœur pleure… mais mes jambes avancent…"
+        ];
+
+        // Réponses des héros - 5 variantes
+        const heroDefeatResponses = {
+            archer: {
+                1: [
+                    "C'est fini…\n\nTu ne feras plus de mal…\n\nJe continue… vers la lumière…\n\nVers lui…",
+                    "Ta chute… n'est qu'un pas…\n\nVers mon but…\n\nJe n'ai pas le temps… pour les regrets…\n\nEn avant…",
+                    "Encore un obstacle… franchi…\n\nCombien reste-t-il…\n\nPeu importe… je continuerai…\n\nJusqu'au bout…",
+                    "Les ombres reculent…\n\nLa lumière avance…\n\nUn combat de plus… une victoire de plus…\n\nJe ne m'arrêterai pas…",
+                    "Repose…\n\nTon règne est terminé…\n\nLe mien… commence à peine…\n\nPlus rien ne m'arrêtera…"
+                ]
+            },
+            knight: {
+                1: [
+                    "L'honneur est sauf…\n\nLa justice… triomphe encore…\n\nRepose… démon…\n\nTon mal… ne se répandra plus…",
+                    "Par mon serment… je t'ai vaincu…\n\nQue ton âme… trouve la paix…\n\nOu la damnation… qu'elle mérite…",
+                    "La lumière… chasse les ténèbres…\n\nComme toujours…\n\nTon sacrifice… ne sera pas vain…\n\nJe protégerai… ce royaume…",
+                    "Tu combattais… avec honneur…\n\nMalgré ta noirceur…\n\nJe te salue… guerrier des ombres…\n\nRepose en paix…",
+                    "Ma lame… s'est teintée… de ton sang…\n\nMais mon honneur… reste intact…\n\nJe continuerai… ma quête…\n\nToujours…"
+                ]
+            },
+            mage: {
+                1: [
+                    "La magie… a tranché…\n\nLumière sur ombre…\n\nTa défaite… était écrite…\n\nDans les étoiles…",
+                    "Les arcanes… ne mentent jamais…\n\nTon destin… s'achève ici…\n\nLe mien… continue…\n\nVers la Dernière Lumière…",
+                    "Intéressant…\n\nTa magie noire… était puissante…\n\nMais insuffisante…\n\nRepose… et laisse la place… à la vraie magie…",
+                    "Les ténèbres… se dissipent…\n\nComme prévu…\n\nTu n'étais… qu'une ombre…\n\nJe suis… la flamme éternelle…",
+                    "Ton essence… retourne au néant…\n\nD'où elle n'aurait… jamais dû sortir…\n\nLa Dernière Lumière… brille encore…\n\nGrâce à moi…"
+                ]
+            },
+            tank: {
+                1: [
+                    "Tu as frappé… encore et encore…\n\nJ'ai tenu…\n\nComme toujours…\n\nC'est fini… pour toi…",
+                    "Ma défense… était meilleure…\n\nQue ton attaque…\n\nRepose… tu t'es bien battu…\n\nMais pas assez…",
+                    "Le mur… ne s'effondre jamais…\n\nTu l'as appris… à tes dépens…\n\nAdieu… gardien déchu…",
+                    "J'encaisse… c'est ma force…\n\nToi… tu n'as pas encaissé…\n\nC'est ta faiblesse…\n\nRepose…",
+                    "Forteresse contre ombre…\n\nLa forteresse… a gagné…\n\nComme toujours…\n\nComme… toujours…"
+                ]
+            }
+        };
+
+        // Choisir un dialogue aléatoire
+        let bossMessage, heroMessage;
+
+        // Cas spécial : Archer et Boss 1 (relation amoureuse)
+        if (this.player.classType === 'archer' && zone === 1) {
+            const randomIndex = Math.floor(Math.random() * archerBoss1DefeatRomance.length);
+            bossMessage = archerBoss1DefeatRomance[randomIndex];
+            heroMessage = archerBoss1DefeatHeroResponses[randomIndex];
+        } else {
+            // Dialogue normal
+            const bossDialogues = bossDefeatMessages[zone] || ["Je… tombe…"];
+            const randomBossIndex = Math.floor(Math.random() * bossDialogues.length);
+            bossMessage = bossDialogues[randomBossIndex];
+
+            const heroDialogues = heroDefeatResponses[this.player.classType]?.[zone] || ["C'est fini…"];
+            const randomHeroIndex = Math.floor(Math.random() * heroDialogues.length);
+            heroMessage = heroDialogues[randomHeroIndex];
+        }
+
+        // Configurer le dialogue
+        this.currentBossDefeatDialogue = {
+            messages: [
+                { speaker: 'boss', text: bossMessage },
+                { speaker: 'hero', text: heroMessage }
+            ],
+            currentIndex: 0,
+            currentCharIndex: 0,
+            typingSpeed: 30,
+            isTyping: false
+        };
+
+        // Afficher l'écran de dialogue
+        const bossImage = document.getElementById('dialogue-boss-image');
+        const heroImage = document.getElementById('dialogue-boss-hero-image');
+        const bossName = document.getElementById('boss-name');
+        const heroName = document.getElementById('boss-hero-name');
+        const continueBtn = document.getElementById('boss-dialogue-finish-btn');
+
+        // Images - Boss blessé avec effet de sang
+        bossImage.src = `./pixel_art/boss_talk/boss_${zone}.png`;
+        bossImage.style.filter = 'drop-shadow(0 0 20px rgba(231, 76, 60, 0.8)) grayscale(30%) brightness(0.7)';
+        bossName.textContent = `Gardien de la Zone ${zone} - Vaincu`;
+
+        const heroImageMap = {
+            archer: './pixel_art/heros_talk/archer.png',
+            knight: './pixel_art/heros_talk/knight.png',
+            mage: './pixel_art/heros_talk/magic men.png',
+            tank: './pixel_art/heros_talk/tank.png'
+        };
+        heroImage.src = heroImageMap[this.player.classType];
+        heroName.textContent = this.player.className;
+
+        // Masquer le bouton au début
+        continueBtn.style.display = 'none';
+
+        // Afficher l'écran
+        this.showScreen('boss-dialogue');
+        this.state = 'boss_defeat_dialogue';
+
+        // Démarrer l'affichage du premier message
+        this.typeNextBossDefeatDialogueMessage();
+    }
+
+    // Taper le prochain message du dialogue de défaite
+    typeNextBossDefeatDialogueMessage() {
+        if (!this.currentBossDefeatDialogue) return;
+
+        const message = this.currentBossDefeatDialogue.messages[this.currentBossDefeatDialogue.currentIndex];
+        if (!message) {
+            this.endBossDefeatDialogue();
+            return;
+        }
+
+        const dialogueText = document.getElementById('boss-dialogue-text');
+        const bossContainer = document.querySelector('.dialogue-boss');
+        const heroContainers = document.querySelectorAll('.dialogue-second-hero');
+        const heroContainer = heroContainers[1];
+
+        if (message.speaker === 'boss') {
+            bossContainer.classList.add('active');
+            heroContainer.classList.remove('active');
+        } else {
+            bossContainer.classList.remove('active');
+            heroContainer.classList.add('active');
+        }
+
+        dialogueText.textContent = '';
+        this.currentBossDefeatDialogue.currentCharIndex = 0;
+        this.currentBossDefeatDialogue.isTyping = true;
+
+        this.typeBossDefeatDialogueCharacter();
+    }
+
+    // Taper un caractère du dialogue de défaite
+    typeBossDefeatDialogueCharacter() {
+        if (!this.currentBossDefeatDialogue || !this.currentBossDefeatDialogue.isTyping) return;
+
+        const message = this.currentBossDefeatDialogue.messages[this.currentBossDefeatDialogue.currentIndex];
+        const dialogueText = document.getElementById('boss-dialogue-text');
+        const continueBtn = document.getElementById('boss-dialogue-finish-btn');
+
+        if (this.currentBossDefeatDialogue.currentCharIndex < message.text.length) {
+            dialogueText.textContent += message.text[this.currentBossDefeatDialogue.currentCharIndex];
+            this.currentBossDefeatDialogue.currentCharIndex++;
+
+            setTimeout(() => this.typeBossDefeatDialogueCharacter(), this.currentBossDefeatDialogue.typingSpeed);
+        } else {
+            this.currentBossDefeatDialogue.isTyping = false;
+
+            if (this.currentBossDefeatDialogue.currentIndex < this.currentBossDefeatDialogue.messages.length - 1) {
+                continueBtn.textContent = 'Continuer ➤';
+            } else {
+                continueBtn.textContent = 'Continuer l\'aventure ➤';
+            }
+            continueBtn.style.display = 'block';
+        }
+    }
+
+    // Passer au message suivant du dialogue de défaite
+    nextBossDefeatDialogueMessage() {
+        if (!this.currentBossDefeatDialogue) return;
+
+        if (this.currentBossDefeatDialogue.isTyping) {
+            const message = this.currentBossDefeatDialogue.messages[this.currentBossDefeatDialogue.currentIndex];
+            document.getElementById('boss-dialogue-text').textContent = message.text;
+            this.currentBossDefeatDialogue.isTyping = false;
+            this.currentBossDefeatDialogue.currentCharIndex = message.text.length;
+
+            const continueBtn = document.getElementById('boss-dialogue-finish-btn');
+            if (this.currentBossDefeatDialogue.currentIndex < this.currentBossDefeatDialogue.messages.length - 1) {
+                continueBtn.textContent = 'Continuer ➤';
+            } else {
+                continueBtn.textContent = 'Continuer l\'aventure ➤';
+            }
+            continueBtn.style.display = 'block';
+            return;
+        }
+
+        this.currentBossDefeatDialogue.currentIndex++;
+
+        if (this.currentBossDefeatDialogue.currentIndex < this.currentBossDefeatDialogue.messages.length) {
+            this.typeNextBossDefeatDialogueMessage();
+        } else {
+            this.endBossDefeatDialogue();
+        }
+    }
+
+    // Terminer le dialogue de défaite du boss
+    endBossDefeatDialogue() {
+        // Supprimer le boss
+        if (this.defeatedBoss) {
+            this.enemies = this.enemies.filter(e => e !== this.defeatedBoss);
+            this.defeatedBoss = null;
+        }
+
+        this.currentBossDefeatDialogue = null;
+        this.state = 'playing';
+        this.showScreen('game-screen');
+
+        // Réinitialiser le filtre de l'image
+        const bossImage = document.getElementById('dialogue-boss-image');
+        bossImage.style.filter = '';
+
+        this.addLog('🏆 BOSS VAINCU!', 'heal');
     }
 
     // Vérifier les collisions des anneaux magiques avec les ennemis
@@ -3325,6 +3615,26 @@ class Game {
             return ft.elapsed < ft.duration;
         });
     }
+
+    // Mettre à jour les particules
+    updateParticles(deltaTime) {
+        this.particles = this.particles.filter(particle => {
+            // Mettre à jour la position
+            particle.x += particle.vx * deltaTime;
+            particle.y += particle.vy * deltaTime;
+
+            // Appliquer la gravité pour le sang
+            if (particle.type === 'blood') {
+                particle.vy += 5 * deltaTime; // Gravité
+                particle.vx *= 0.95; // Friction
+            }
+
+            // Réduire la durée de vie
+            particle.life -= deltaTime;
+
+            return particle.life > 0;
+        });
+    }
     
     // Dessiner les textes flottants
     renderFloatingTexts(ctx) {
@@ -3377,6 +3687,7 @@ class Game {
         }
 
         this.updateFloatingTexts(deltaTime);
+        this.updateParticles(deltaTime);
         this.updateHUD();
         
         // Mise à jour de l'animation de marche
@@ -3859,11 +4170,67 @@ class Game {
             ctx.stroke();
         }
         
+        // Dessiner les taches de sang au sol (sous les animations)
+        if (this.bloodStains && this.bloodStains.length > 0) {
+            for (const stain of this.bloodStains) {
+                const stainX = (stain.x - this.camera.x) * CONFIG.CELL_SIZE;
+                const stainY = (stain.y - this.camera.y) * CONFIG.CELL_SIZE;
+
+                if (stainX >= -CONFIG.CELL_SIZE && stainX < this.canvas.width &&
+                    stainY >= -CONFIG.CELL_SIZE && stainY < this.canvas.height) {
+                    ctx.save();
+                    ctx.globalAlpha = stain.alpha;
+                    ctx.fillStyle = '#8B0000';
+
+                    // Dessiner une forme irrégulière de tache de sang
+                    ctx.beginPath();
+                    const centerX = stainX + CONFIG.CELL_SIZE / 2;
+                    const centerY = stainY + CONFIG.CELL_SIZE / 2;
+                    const radius = CONFIG.CELL_SIZE * stain.size / 2;
+
+                    for (let i = 0; i < 8; i++) {
+                        const angle = (i / 8) * Math.PI * 2;
+                        const variance = 0.7 + Math.random() * 0.6;
+                        const x = centerX + Math.cos(angle) * radius * variance;
+                        const y = centerY + Math.sin(angle) * radius * variance;
+
+                        if (i === 0) {
+                            ctx.moveTo(x, y);
+                        } else {
+                            ctx.lineTo(x, y);
+                        }
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+        }
+
+        // Dessiner les particules de sang (au-dessus des taches)
+        if (this.particles && this.particles.length > 0) {
+            for (const particle of this.particles) {
+                const particleX = (particle.x - this.camera.x) * CONFIG.CELL_SIZE;
+                const particleY = (particle.y - this.camera.y) * CONFIG.CELL_SIZE;
+
+                if (particleX >= 0 && particleX < this.canvas.width &&
+                    particleY >= 0 && particleY < this.canvas.height) {
+                    ctx.save();
+                    ctx.globalAlpha = particle.life / particle.maxLife;
+                    ctx.fillStyle = particle.color;
+                    ctx.beginPath();
+                    ctx.arc(particleX, particleY, particle.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+        }
+
         // Dessiner les animations par-dessus tout
         for (const anim of this.animations) {
             anim.render(ctx, this.camera, CONFIG.CELL_SIZE);
         }
-        
+
         // Dessiner les textes flottants par-dessus tout
         this.renderFloatingTexts(ctx);
     }
