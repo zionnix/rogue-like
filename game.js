@@ -1474,6 +1474,17 @@ class Game {
         document.getElementById('dialogue-finish-btn').addEventListener('click', () => {
             this.finishDialogue();
         });
+
+        // Event listeners pour le dialogue de seconde vie
+        document.getElementById('second-life-dialogue').addEventListener('click', (e) => {
+            if (e.target.id !== 'second-dialogue-finish-btn') {
+                this.nextSecondLifeDialogueMessage();
+            }
+        });
+
+        document.getElementById('second-dialogue-finish-btn').addEventListener('click', () => {
+            this.nextSecondLifeDialogueMessage();
+        });
     }
 
     // Afficher le dialogue de zone
@@ -2226,6 +2237,156 @@ class Game {
 
     // Fin de l'animation de seconde vie
     finishSecondLifeAnimation() {
+        // Afficher le dialogue entre l'ange et le héros
+        this.showSecondLifeDialogue();
+    }
+
+    // Afficher le dialogue après la résurrection
+    showSecondLifeDialogue() {
+        // Dialogues de l'ange et réponses des héros
+        const angelMessage = "Tu as frôlé les ténèbres, Porteur de Lumière.\n\nJe t'ai ramené… mais je ne pourrai pas le refaire.\n\nCette seconde chance est la dernière.\n\nFais attention à ta vie, maintenant.";
+
+        const heroResponses = {
+            archer: "Je sais.\n\nMais tant qu'il est là-bas, prisonnier des ombres…\n\nJe ne peux pas abandonner.\n\nMême si c'est ma dernière chance.",
+            knight: "Merci, ange gardien.\n\nJe ne mourrai plus en lâche.\n\nSi je tombe à nouveau… ce sera en me battant jusqu'au bout.",
+            tank: "Une dernière ligne de défense.\n\nC'est tout ce qu'il me faut.\n\nJe ne reculerai pas.",
+            mage: "La mort… je l'ai vue de près.\n\nLa Dernière Lumière vacille.\n\nJe dois continuer. Même si tout s'effondre."
+        };
+
+        // Configurer le dialogue
+        this.currentDialogue = {
+            messages: [
+                { speaker: 'angel', text: angelMessage },
+                { speaker: 'hero', text: heroResponses[this.player.classType] }
+            ],
+            currentIndex: 0,
+            currentCharIndex: 0,
+            typingSpeed: 30, // ms par caractère
+            isTyping: false
+        };
+
+        // Afficher l'écran de dialogue
+        const dialogueContainer = document.getElementById('second-life-dialogue');
+        const angelImage = document.getElementById('dialogue-angel-image');
+        const heroImage = document.getElementById('dialogue-second-hero-image');
+        const dialogueText = document.getElementById('second-dialogue-text');
+        const continueBtn = document.getElementById('second-dialogue-finish-btn');
+
+        // Images
+        angelImage.src = './pixel_art/helping/healer.png';
+        const heroImageMap = {
+            archer: './pixel_art/hero/archer.png',
+            knight: './pixel_art/hero/knight.png',
+            mage: './pixel_art/hero/magic men.png',
+            tank: './pixel_art/hero/tank.png'
+        };
+        heroImage.src = heroImageMap[this.player.classType];
+
+        // Masquer le bouton au début
+        continueBtn.style.display = 'none';
+
+        // Afficher l'écran
+        this.showScreen('second-life-dialogue');
+        this.state = 'second_life_dialogue';
+
+        // Démarrer l'affichage du premier message
+        this.typeNextDialogueMessage();
+    }
+
+    // Taper le prochain message du dialogue
+    typeNextDialogueMessage() {
+        if (!this.currentDialogue) return;
+
+        const message = this.currentDialogue.messages[this.currentDialogue.currentIndex];
+        if (!message) {
+            // Fin du dialogue
+            this.endSecondLifeDialogue();
+            return;
+        }
+
+        const dialogueText = document.getElementById('second-dialogue-text');
+        const angelContainer = document.querySelector('.dialogue-angel');
+        const heroContainer = document.querySelector('.dialogue-second-hero');
+
+        // Mettre en surbrillance le bon personnage
+        if (message.speaker === 'angel') {
+            angelContainer.classList.add('active');
+            heroContainer.classList.remove('active');
+        } else {
+            angelContainer.classList.remove('active');
+            heroContainer.classList.add('active');
+        }
+
+        // Réinitialiser le texte
+        dialogueText.textContent = '';
+        this.currentDialogue.currentCharIndex = 0;
+        this.currentDialogue.isTyping = true;
+
+        // Animation de frappe
+        this.typeDialogueCharacter();
+    }
+
+    // Taper un caractère du dialogue
+    typeDialogueCharacter() {
+        if (!this.currentDialogue || !this.currentDialogue.isTyping) return;
+
+        const message = this.currentDialogue.messages[this.currentDialogue.currentIndex];
+        const dialogueText = document.getElementById('second-dialogue-text');
+        const continueBtn = document.getElementById('second-dialogue-finish-btn');
+
+        if (this.currentDialogue.currentCharIndex < message.text.length) {
+            dialogueText.textContent += message.text[this.currentDialogue.currentCharIndex];
+            this.currentDialogue.currentCharIndex++;
+
+            setTimeout(() => this.typeDialogueCharacter(), this.currentDialogue.typingSpeed);
+        } else {
+            // Message terminé
+            this.currentDialogue.isTyping = false;
+
+            // Afficher le bouton "Continuer" ou "Reprendre"
+            if (this.currentDialogue.currentIndex < this.currentDialogue.messages.length - 1) {
+                continueBtn.textContent = 'Continuer ➤';
+            } else {
+                continueBtn.textContent = 'Reprendre le combat ⚔️';
+            }
+            continueBtn.style.display = 'block';
+        }
+    }
+
+    // Passer au message suivant du dialogue
+    nextSecondLifeDialogueMessage() {
+        if (!this.currentDialogue) return;
+
+        // Si encore en train de taper, afficher tout le texte
+        if (this.currentDialogue.isTyping) {
+            const message = this.currentDialogue.messages[this.currentDialogue.currentIndex];
+            document.getElementById('second-dialogue-text').textContent = message.text;
+            this.currentDialogue.isTyping = false;
+            this.currentDialogue.currentCharIndex = message.text.length;
+
+            const continueBtn = document.getElementById('second-dialogue-finish-btn');
+            if (this.currentDialogue.currentIndex < this.currentDialogue.messages.length - 1) {
+                continueBtn.textContent = 'Continuer ➤';
+            } else {
+                continueBtn.textContent = 'Reprendre le combat ⚔️';
+            }
+            continueBtn.style.display = 'block';
+            return;
+        }
+
+        // Passer au message suivant
+        this.currentDialogue.currentIndex++;
+
+        if (this.currentDialogue.currentIndex < this.currentDialogue.messages.length) {
+            this.typeNextDialogueMessage();
+        } else {
+            this.endSecondLifeDialogue();
+        }
+    }
+
+    // Terminer le dialogue de seconde vie
+    endSecondLifeDialogue() {
+        this.currentDialogue = null;
         this.state = 'playing';
         this.showScreen('game-screen');
 
@@ -2729,18 +2890,20 @@ class Game {
         }
 
         // Afficher les perks actifs
-        for (const perk of this.player.perks) {
-            const div = document.createElement('div');
-            div.className = 'upgrade-item perk-item';
-            div.style.borderColor = CONFIG.RARITY[perk.rarity].color;
+        if (this.player.perks && Array.isArray(this.player.perks)) {
+            for (const perk of this.player.perks) {
+                const div = document.createElement('div');
+                div.className = 'upgrade-item perk-item';
+                div.style.borderColor = CONFIG.RARITY[perk.rarity].color;
 
-            let perkText = `${perk.icon} ${perk.name}`;
-            if (perk.level > 1) {
-                perkText += ` (Niv. ${perk.level})`;
+                let perkText = `${perk.icon} ${perk.name}`;
+                if (perk.level > 1) {
+                    perkText += ` (Niv. ${perk.level})`;
+                }
+
+                div.textContent = perkText;
+                upgradesList.appendChild(div);
             }
-
-            div.textContent = perkText;
-            upgradesList.appendChild(div);
         }
 
         // Afficher le statut du shield si actif
