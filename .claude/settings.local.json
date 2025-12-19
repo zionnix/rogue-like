@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(node -c:*)",
-      "Bash(ls -la \"c:\\\\Dev\\\\rogue-like\\\\pixel_art\\\\ennemi\\\\zone 1\"\" 2>&1 || ls -la \"c:Devrogue-likepixel_artennemizone1\"\")"
+      "Bash(ls -la \"c:\\\\Dev\\\\rogue-like\\\\pixel_art\\\\ennemi\\\\zone 1\"\" 2>&1 || ls -la \"c:Devrogue-likepixel_artennemizone1\"\")",
+      "Bash(ls:*)"
     ]
   }
 }
