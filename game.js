@@ -3860,6 +3860,33 @@ window.heal = function() {
 };
 
 /**
+ * Tuer tous les ennemis de la salle actuelle
+ */
+window.killAllEnemies = function() {
+    if (!game || !game.player) {
+        console.error('Vous devez être en jeu');
+        return;
+    }
+
+    const enemyCount = game.enemies.length;
+    if (enemyCount === 0) {
+        console.log('⚠️ Aucun ennemi à tuer');
+        return;
+    }
+
+    // Tuer tous les ennemis
+    game.enemies.forEach(enemy => {
+        enemy.health = 0;
+    });
+
+    // Nettoyer les ennemis morts
+    game.enemies = game.enemies.filter(enemy => enemy.health > 0);
+
+    console.log(`💀 ${enemyCount} ennemi(s) éliminé(s)!`);
+    game.addLog(`💀 Tous les ennemis ont été éliminés!`, 'damage');
+};
+
+/**
  * Obtenir des informations sur le niveau actuel
  */
 window.gameInfo = function() {
@@ -3873,6 +3900,7 @@ window.gameInfo = function() {
     console.log(`Zone: ${Math.ceil(game.currentLevel / CONFIG.LEVELS_PER_ZONE)}`);
     const isBossLevel = ((game.currentLevel - 1) % CONFIG.LEVELS_PER_ZONE) === (CONFIG.LEVELS_PER_ZONE - 1);
     console.log(`Niveau boss: ${isBossLevel ? 'Oui' : 'Non'}`);
+    console.log(`Ennemis restants: ${game.enemies ? game.enemies.length : 0}`);
 
     if (game.player) {
         console.log(`\n👤 Joueur:`);
