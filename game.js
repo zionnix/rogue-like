@@ -307,36 +307,91 @@ const CONFIG = {
 
 // ===== GÉNÉRATION PROCÉDURALE DE DONJON =====
 class DungeonGenerator {
-    constructor(size) {
+    constructor(size, isBossLevel = false) {
         this.size = size;
         this.grid = [];
         this.rooms = [];
+        this.isBossLevel = isBossLevel;
+        this.bossRoom = null;
     }
-    
+
     generate() {
         // Initialiser la grille avec des murs
-        this.grid = Array(this.size).fill(null).map(() => 
+        this.grid = Array(this.size).fill(null).map(() =>
             Array(this.size).fill(1)
         );
-        
-        // Générer des salles avec BSP (Binary Space Partitioning)
-        this.generateRooms();
-        
-        // Connecter les salles avec des corridors
-        this.connectRooms();
-        
+
+        if (this.isBossLevel) {
+            // Générer une salle de boss spéciale au centre
+            this.generateBossRoom();
+        } else {
+            // Générer des salles avec BSP (Binary Space Partitioning)
+            this.generateRooms();
+
+            // Connecter les salles avec des corridors
+            this.connectRooms();
+        }
+
         return this.grid;
     }
     
+    generateBossRoom() {
+        // Créer une grande salle carrée au centre pour le boss
+        const roomSize = 20; // Grande salle carrée
+        const centerX = Math.floor(this.size / 2 - roomSize / 2);
+        const centerY = Math.floor(this.size / 2 - roomSize / 2);
+
+        // Créer la salle de boss
+        this.createRoom(centerX, centerY, roomSize, roomSize);
+        this.bossRoom = { x: centerX, y: centerY, width: roomSize, height: roomSize };
+        this.rooms.push(this.bossRoom);
+
+        // Créer 4 petits couloirs menant à la salle (nord, sud, est, ouest)
+        const corridorLength = 5;
+        const corridorWidth = 3;
+
+        // Couloir Nord
+        this.createRoom(
+            centerX + Math.floor(roomSize / 2) - 1,
+            centerY - corridorLength,
+            corridorWidth,
+            corridorLength
+        );
+
+        // Couloir Sud
+        this.createRoom(
+            centerX + Math.floor(roomSize / 2) - 1,
+            centerY + roomSize,
+            corridorWidth,
+            corridorLength
+        );
+
+        // Couloir Est
+        this.createRoom(
+            centerX + roomSize,
+            centerY + Math.floor(roomSize / 2) - 1,
+            corridorLength,
+            corridorWidth
+        );
+
+        // Couloir Ouest
+        this.createRoom(
+            centerX - corridorLength,
+            centerY + Math.floor(roomSize / 2) - 1,
+            corridorLength,
+            corridorWidth
+        );
+    }
+
     generateRooms() {
         const numRooms = 15 + Math.floor(Math.random() * 10);
-        
+
         for (let i = 0; i < numRooms; i++) {
             const width = 6 + Math.floor(Math.random() * 10);
             const height = 6 + Math.floor(Math.random() * 10);
             const x = 2 + Math.floor(Math.random() * (this.size - width - 4));
             const y = 2 + Math.floor(Math.random() * (this.size - height - 4));
-            
+
             // Vérifier les chevauchements
             let overlaps = false;
             for (const room of this.rooms) {
@@ -348,7 +403,7 @@ class DungeonGenerator {
                     break;
                 }
             }
-            
+
             if (!overlaps) {
                 this.createRoom(x, y, width, height);
                 this.rooms.push({ x, y, width, height });
@@ -1302,6 +1357,19 @@ class Game {
                 small: []
             }
         };
+
+        // Charger les sprites des boss
+        this.bossSprites = {};
+        this.bossTalkSprites = {};
+
+        // Boss Zone 1
+        const boss1 = new Image();
+        boss1.src = './pixel_art/boss/boss_1.png';
+        this.bossSprites[1] = boss1;
+
+        const bossTalk1 = new Image();
+        bossTalk1.src = './pixel_art/boss_talk/boss_1.png';
+        this.bossTalkSprites[1] = bossTalk1;
         
         // Zone 1 - Mélée
         const melee1 = new Image();
@@ -1485,6 +1553,17 @@ class Game {
         document.getElementById('second-dialogue-finish-btn').addEventListener('click', () => {
             this.nextSecondLifeDialogueMessage();
         });
+
+        // Event listeners pour le dialogue avec le boss
+        document.getElementById('boss-dialogue').addEventListener('click', (e) => {
+            if (e.target.id !== 'boss-dialogue-finish-btn') {
+                this.nextBossDialogueMessage();
+            }
+        });
+
+        document.getElementById('boss-dialogue-finish-btn').addEventListener('click', () => {
+            this.nextBossDialogueMessage();
+        });
     }
 
     // Afficher le dialogue de zone
@@ -1614,11 +1693,18 @@ class Game {
     }
     
     generateLevel() {
-        const generator = new DungeonGenerator(CONFIG.GRID_SIZE);
+        const levelInZone = ((this.currentLevel - 1) % CONFIG.LEVELS_PER_ZONE) + 1;
+        const isBossLevel = levelInZone === CONFIG.LEVELS_PER_ZONE;
+
+        const generator = new DungeonGenerator(CONFIG.GRID_SIZE, isBossLevel);
         this.dungeon = generator;
         this.dungeon.grid = generator.generate();
 
         this.exit = this.dungeon.findExitPoint();
+
+        // Marquer si c'est un niveau de boss
+        this.isBossLevel = isBossLevel;
+        this.bossRoomSealed = false; // Les portes ne sont pas encore scellées
 
         // Générer 0 à 2 salles de soins aléatoirement (sauf niveaux boss)
         this.generateHealingRooms();
@@ -1784,11 +1870,20 @@ class Game {
             if (this.canMoveTo(newX, newY)) {
                 this.player.x = newX;
                 this.player.y = newY;
-                
+
                 // Activer l'animation de marche
                 this.player.isWalking = true;
                 this.player.walkFrame = (this.player.walkFrame + 1) % 4;
-                
+
+                // Si c'est un niveau de boss et que le joueur entre dans la salle
+                if (this.isBossLevel && !this.bossRoomSealed && this.dungeon.bossRoom) {
+                    const bossRoom = this.dungeon.bossRoom;
+                    if (newX >= bossRoom.x && newX < bossRoom.x + bossRoom.width &&
+                        newY >= bossRoom.y && newY < bossRoom.y + bossRoom.height) {
+                        this.sealBossRoom();
+                    }
+                }
+
                 // Vérifier si on atteint la sortie
                 if (newX === this.exit.x && newY === this.exit.y) {
                     if (this.enemies.length === 0) {
@@ -1804,22 +1899,55 @@ class Game {
         }
     }
     
+    sealBossRoom() {
+        if (!this.dungeon.bossRoom) return;
+
+        this.bossRoomSealed = true;
+        const bossRoom = this.dungeon.bossRoom;
+
+        // Sceller les entrées de la salle en créant des murs
+        // Couloir Nord
+        for (let x = bossRoom.x + Math.floor(bossRoom.width / 2) - 1; x < bossRoom.x + Math.floor(bossRoom.width / 2) + 2; x++) {
+            this.dungeon.grid[bossRoom.y - 1][x] = 1;
+        }
+
+        // Couloir Sud
+        for (let x = bossRoom.x + Math.floor(bossRoom.width / 2) - 1; x < bossRoom.x + Math.floor(bossRoom.width / 2) + 2; x++) {
+            this.dungeon.grid[bossRoom.y + bossRoom.height][x] = 1;
+        }
+
+        // Couloir Est
+        for (let y = bossRoom.y + Math.floor(bossRoom.height / 2) - 1; y < bossRoom.y + Math.floor(bossRoom.height / 2) + 2; y++) {
+            this.dungeon.grid[y][bossRoom.x + bossRoom.width] = 1;
+        }
+
+        // Couloir Ouest
+        for (let y = bossRoom.y + Math.floor(bossRoom.height / 2) - 1; y < bossRoom.y + Math.floor(bossRoom.height / 2) + 2; y++) {
+            this.dungeon.grid[y][bossRoom.x - 1] = 1;
+        }
+
+        this.addLog('⚔️ La salle du boss est scellée!', 'damage');
+
+        // Déclencher le dialogue avec le boss
+        this.showBossDialogue();
+    }
+
     canMoveTo(x, y) {
         if (x < 0 || x >= CONFIG.GRID_SIZE || y < 0 || y >= CONFIG.GRID_SIZE) {
             return false;
         }
-        
+
         if (this.dungeon.grid[y][x] === 1) {
             return false;
         }
-        
+
         // Vérifier collision avec ennemis
         for (const enemy of this.enemies) {
             if (enemy.x === x && enemy.y === y) {
                 return false;
             }
         }
-        
+
         return true;
     }
     
@@ -2273,7 +2401,7 @@ class Game {
         const continueBtn = document.getElementById('second-dialogue-finish-btn');
 
         // Images
-        angelImage.src = './pixel_art/helping/healer.png';
+        angelImage.src = './pixel_art/helping_talk/healer.png';
         const heroImageMap = {
             archer: './pixel_art/hero/archer.png',
             knight: './pixel_art/hero/knight.png',
@@ -2400,6 +2528,179 @@ class Game {
 
         // Mettre à jour le HUD
         this.updateHUD();
+    }
+
+    // ===== DIALOGUE AVEC LE BOSS =====
+
+    // Afficher le dialogue avec le boss
+    showBossDialogue() {
+        const zone = Math.ceil(this.currentLevel / CONFIG.LEVELS_PER_ZONE);
+
+        // Dialogues du boss zone 1
+        const bossMessages = {
+            1: "Porteur de Lumière…\n\nTu oses défier les ténèbres ?\n\nJe suis le gardien de ce royaume d'ombres.\n\nTon espoir finira ici."
+        };
+
+        // Réponses des héros selon leur classe
+        const heroResponses = {
+            archer: {
+                1: "Gardien des ténèbres…\n\nJe n'ai pas peur de toi.\n\nJe suis venu reprendre ce que tu as volé.\n\nEn garde!"
+            },
+            knight: {
+                1: "Un gardien des ombres…\n\nJ'ai affronté pire que toi.\n\nMon honneur ne vacillera pas.\n\nBattons-nous!"
+            },
+            mage: {
+                1: "Les ténèbres…\n\nElles m'appellent depuis si longtemps.\n\nMais la Dernière Lumière brille encore.\n\nJe te vaincrai!"
+            },
+            tank: {
+                1: "Un gardien.\n\nParfait.\n\nJe suis le mur qui ne s'effondre jamais.\n\nViens!"
+            }
+        };
+
+        const bossMessage = bossMessages[zone] || "Prépare-toi à l'affrontement final!";
+        const heroMessage = heroResponses[this.player.classType]?.[zone] || "Je ne reculerai pas!";
+
+        // Configurer le dialogue
+        this.currentBossDialogue = {
+            messages: [
+                { speaker: 'boss', text: bossMessage },
+                { speaker: 'hero', text: heroMessage }
+            ],
+            currentIndex: 0,
+            currentCharIndex: 0,
+            typingSpeed: 30,
+            isTyping: false
+        };
+
+        // Afficher l'écran de dialogue
+        const bossImage = document.getElementById('dialogue-boss-image');
+        const heroImage = document.getElementById('dialogue-boss-hero-image');
+        const bossName = document.getElementById('boss-name');
+        const heroName = document.getElementById('boss-hero-name');
+        const continueBtn = document.getElementById('boss-dialogue-finish-btn');
+
+        // Images - Utiliser boss_talk pour le dialogue
+        bossImage.src = `./pixel_art/boss_talk/boss_${zone}.png`;
+        bossName.textContent = `Gardien de la Zone ${zone}`;
+
+        const heroImageMap = {
+            archer: './pixel_art/hero/archer.png',
+            knight: './pixel_art/hero/knight.png',
+            mage: './pixel_art/hero/magic men.png',
+            tank: './pixel_art/hero/tank.png'
+        };
+        heroImage.src = heroImageMap[this.player.classType];
+        heroName.textContent = this.player.className;
+
+        // Masquer le bouton au début
+        continueBtn.style.display = 'none';
+
+        // Afficher l'écran
+        this.showScreen('boss-dialogue');
+        this.state = 'boss_dialogue';
+
+        // Démarrer l'affichage du premier message
+        this.typeNextBossDialogueMessage();
+    }
+
+    // Taper le prochain message du dialogue avec le boss
+    typeNextBossDialogueMessage() {
+        if (!this.currentBossDialogue) return;
+
+        const message = this.currentBossDialogue.messages[this.currentBossDialogue.currentIndex];
+        if (!message) {
+            this.endBossDialogue();
+            return;
+        }
+
+        const dialogueText = document.getElementById('boss-dialogue-text');
+        const bossContainer = document.querySelector('.dialogue-boss');
+        const heroContainers = document.querySelectorAll('.dialogue-second-hero');
+        const heroContainer = heroContainers[1]; // Le deuxième (pour le boss)
+
+        // Mettre en surbrillance le bon personnage
+        if (message.speaker === 'boss') {
+            bossContainer.classList.add('active');
+            heroContainer.classList.remove('active');
+        } else {
+            bossContainer.classList.remove('active');
+            heroContainer.classList.add('active');
+        }
+
+        // Réinitialiser le texte
+        dialogueText.textContent = '';
+        this.currentBossDialogue.currentCharIndex = 0;
+        this.currentBossDialogue.isTyping = true;
+
+        // Animation de frappe
+        this.typeBossDialogueCharacter();
+    }
+
+    // Taper un caractère du dialogue avec le boss
+    typeBossDialogueCharacter() {
+        if (!this.currentBossDialogue || !this.currentBossDialogue.isTyping) return;
+
+        const message = this.currentBossDialogue.messages[this.currentBossDialogue.currentIndex];
+        const dialogueText = document.getElementById('boss-dialogue-text');
+        const continueBtn = document.getElementById('boss-dialogue-finish-btn');
+
+        if (this.currentBossDialogue.currentCharIndex < message.text.length) {
+            dialogueText.textContent += message.text[this.currentBossDialogue.currentCharIndex];
+            this.currentBossDialogue.currentCharIndex++;
+
+            setTimeout(() => this.typeBossDialogueCharacter(), this.currentBossDialogue.typingSpeed);
+        } else {
+            // Message terminé
+            this.currentBossDialogue.isTyping = false;
+
+            // Afficher le bouton
+            if (this.currentBossDialogue.currentIndex < this.currentBossDialogue.messages.length - 1) {
+                continueBtn.textContent = 'Continuer ➤';
+            } else {
+                continueBtn.textContent = 'Commencer le combat ⚔️';
+            }
+            continueBtn.style.display = 'block';
+        }
+    }
+
+    // Passer au message suivant du dialogue avec le boss
+    nextBossDialogueMessage() {
+        if (!this.currentBossDialogue) return;
+
+        // Si encore en train de taper, afficher tout le texte
+        if (this.currentBossDialogue.isTyping) {
+            const message = this.currentBossDialogue.messages[this.currentBossDialogue.currentIndex];
+            document.getElementById('boss-dialogue-text').textContent = message.text;
+            this.currentBossDialogue.isTyping = false;
+            this.currentBossDialogue.currentCharIndex = message.text.length;
+
+            const continueBtn = document.getElementById('boss-dialogue-finish-btn');
+            if (this.currentBossDialogue.currentIndex < this.currentBossDialogue.messages.length - 1) {
+                continueBtn.textContent = 'Continuer ➤';
+            } else {
+                continueBtn.textContent = 'Commencer le combat ⚔️';
+            }
+            continueBtn.style.display = 'block';
+            return;
+        }
+
+        // Passer au message suivant
+        this.currentBossDialogue.currentIndex++;
+
+        if (this.currentBossDialogue.currentIndex < this.currentBossDialogue.messages.length) {
+            this.typeNextBossDialogueMessage();
+        } else {
+            this.endBossDialogue();
+        }
+    }
+
+    // Terminer le dialogue avec le boss
+    endBossDialogue() {
+        this.currentBossDialogue = null;
+        this.state = 'playing';
+        this.showScreen('game-screen');
+
+        this.addLog('⚔️ Le combat commence!', 'damage');
     }
 
     // Vérifier les collisions des anneaux magiques avec les ennemis
@@ -3206,11 +3507,30 @@ class Game {
                 // Essayer d'utiliser le sprite
                 const zone = enemy.zone;
                 let spriteDrawn = false;
-                
-                if (!enemy.isBoss && this.enemySprites[zone] && this.enemySprites[zone][enemy.combatType]) {
+
+                // Sprite de boss
+                if (enemy.isBoss && this.bossSprites[zone]) {
+                    const bossSprite = this.bossSprites[zone];
+                    if (bossSprite && bossSprite.complete && bossSprite.naturalWidth > 0) {
+                        ctx.imageSmoothingEnabled = false;
+                        // Boss plus grand
+                        const bossSize = CONFIG.SPRITE_SIZE * 1.5;
+                        const bossOffsetSize = (CONFIG.CELL_SIZE - bossSize) / 2;
+                        ctx.drawImage(
+                            bossSprite,
+                            ex + bossOffsetSize,
+                            ey + bossOffsetSize,
+                            bossSize,
+                            bossSize
+                        );
+                        spriteDrawn = true;
+                    }
+                }
+                // Sprite d'ennemi normal
+                else if (!enemy.isBoss && this.enemySprites[zone] && this.enemySprites[zone][enemy.combatType]) {
                     const spriteList = this.enemySprites[zone][enemy.combatType];
                     const sprite = spriteList[enemy.spriteIndex % spriteList.length];
-                    
+
                     if (sprite && sprite.complete && sprite.naturalWidth > 0) {
                         ctx.imageSmoothingEnabled = false;
                         ctx.drawImage(
@@ -3503,7 +3823,8 @@ window.teleportToLevel = function(level) {
     }
 
     console.log(`🎮 Téléportation au niveau ${level}...`);
-    game.currentLevel = level;
+    // On met le niveau à level-1 car nextLevel() va l'incrémenter
+    game.currentLevel = level - 1;
     game.nextLevel();
     console.log(`✅ Vous êtes maintenant au niveau ${level}`);
 };
