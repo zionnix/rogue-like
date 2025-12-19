@@ -327,7 +327,8 @@ class Player extends Entity {
         };
 
         // Système de perks/bonus
-        this.perks = {}; // { perkId: level }
+        this.perks = []; // Liste des perks actifs
+        this.perkLevels = {}; // { perkId: level }
         this.perkEffects = {
             // Bouclier
             shieldActive: false,
@@ -388,23 +389,38 @@ class Player extends Entity {
 
     // Ajouter un perk
     addPerk(perkId) {
-        if (!this.perks[perkId]) {
-            this.perks[perkId] = 0;
+        if (!this.perkLevels[perkId]) {
+            this.perkLevels[perkId] = 0;
         }
 
         const perkConfig = CONFIG.PERKS[Object.keys(CONFIG.PERKS).find(k => CONFIG.PERKS[k].id === perkId)];
         if (!perkConfig) return;
 
-        if (this.perks[perkId] < perkConfig.maxLevel) {
-            this.perks[perkId]++;
+        if (this.perkLevels[perkId] < perkConfig.maxLevel) {
+            this.perkLevels[perkId]++;
+
+            // Ajouter à la liste des perks si c'est la première fois
+            const existingPerk = this.perks.find(p => p.id === perkId);
+            if (existingPerk) {
+                existingPerk.level = this.perkLevels[perkId];
+            } else {
+                this.perks.push({
+                    id: perkId,
+                    name: perkConfig.name,
+                    icon: perkConfig.icon,
+                    rarity: perkConfig.rarity,
+                    level: 1
+                });
+            }
+
             this.applyPerkEffect(perkId);
-            game.addLog(`✨ ${perkConfig.name} niveau ${this.perks[perkId]}!`, 'info');
+            game.addLog(`✨ ${perkConfig.name} niveau ${this.perkLevels[perkId]}!`, 'info');
         }
     }
 
     // Appliquer les effets d'un perk
     applyPerkEffect(perkId) {
-        const level = this.perks[perkId];
+        const level = this.perkLevels[perkId];
 
         switch(perkId) {
             case 'damage_boost':
@@ -487,7 +503,7 @@ class Player extends Entity {
         // Cooldown boules de feu
         if (this.perkEffects.fireballCooldown > 0) {
             this.perkEffects.fireballCooldown -= deltaTime;
-        } else if (this.perkEffects.fireball > 0) {
+        } else if (this.perkLevels.fireball > 0) {
             // Tirer une fireball sur l'ennemi le plus proche
             this.fireAutomaticFireball();
             this.perkEffects.fireballCooldown = 5; // 5 secondes entre chaque fireball
@@ -529,7 +545,7 @@ class Player extends Entity {
             // Appliquer les dégâts et l'effet de brûlure à l'arrivée
             fireballAnimation.onComplete = () => {
                 if (game.enemies.includes(nearestEnemy)) {
-                    const fireballDamage = 20 * this.perkEffects.fireball;
+                    const fireballDamage = 20 * this.perkLevels.fireball;
                     const killed = nearestEnemy.takeDamage(fireballDamage);
 
                     // Afficher les dégâts
@@ -1588,9 +1604,9 @@ class Game {
                 };
                 
                 // Déterminer le nombre d'attaques (double_shot ou double_strike)
-                const numAttacks = (this.player.classType === 'archer' && this.player.perkEffects.double_shot) ? 2 :
+                const numAttacks = (this.player.classType === 'archer' && this.player.perkLevels.double_shot) ? 2 :
                                   ((this.player.classType === 'knight' || this.player.classType === 'tank') &&
-                                   this.player.perkEffects.double_strike) ? 2 : 1;
+                                   this.player.perkLevels.double_strike) ? 2 : 1;
 
                 // Créer les animations pour chaque attaque
                 for (let attackNum = 0; attackNum < numAttacks; attackNum++) {
