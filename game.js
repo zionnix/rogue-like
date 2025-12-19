@@ -61,6 +61,158 @@ const CONFIG = {
         5: { name: 'Cité Futuriste', colors: ['#1a1a2e', '#16c79a', '#0f3460'] }
     },
 
+    // Dialogues des héros par zone
+    HERO_DIALOGUES: {
+        archer: {
+            1: [
+                "Cette forêt... Je sens des présences hostiles partout. Mes flèches seront leurs dernières visions.",
+                "L'air est lourd ici. Parfait pour la chasse. Voyons ce que ces bois cachent.",
+                "On raconte que nul archer n'est revenu de cette forêt. Je serai l'exception.",
+                "Chaque arbre pourrait cacher un ennemi. Mon arc ne tremblera pas.",
+                "La forêt mystique... J'ai entendu des légendes. Il est temps de les vivre."
+            ],
+            2: [
+                "Des grottes... La visibilité sera réduite. Mais mes oreilles sont aussi affûtées que mes flèches.",
+                "L'obscurité ne me fait pas peur. J'ai chassé dans des nuits plus sombres.",
+                "Ces cavernes résonnent de bruits inquiétants. Parfait pour masquer le sifflement de mes flèches.",
+                "Qui sait quelles créatures rampent dans ces ténèbres ? Elles apprendront à me craindre.",
+                "L'écho de ces grottes... Chaque flèche chantera deux fois."
+            ],
+            3: [
+                "De la lave... La chaleur fera fondre mes ennemis avant même que mes flèches ne les atteignent.",
+                "Ce terrain infernal ne m'arrêtera pas. J'ai survécu à pire.",
+                "Les flammes éclairent mes cibles. Presque trop facile.",
+                "Cette chaleur est insupportable... mais ma détermination l'est encore plus.",
+                "Le feu consume tout ici. Sauf ma volonté de vaincre."
+            ],
+            4: [
+                "L'eau... Mes flèches seront ralenties. Je devrai être plus précis que jamais.",
+                "Ces profondeurs cachent des secrets anciens. Et des dangers mortels.",
+                "Respirer est difficile ici. Mais viser reste naturel.",
+                "L'eau déforme la lumière... Je dois ajuster chaque tir.",
+                "Sous la surface, une nouvelle chasse commence."
+            ],
+            5: [
+                "Quelle est cette technologie ? Peu importe, mes flèches restent mortelles.",
+                "Le futur... Je ne comprends pas cet endroit, mais je sais comment y survivre.",
+                "Ces machines brillantes ne m'impressionnent pas. Rien ne vaut un arc bien tendu.",
+                "Même dans ce monde étrange, la précision reste la clé.",
+                "Le passé rencontre le futur. Et le futur va perdre."
+            ]
+        },
+        knight: {
+            1: [
+                "Par mon épée, je purifierai cette forêt de toute menace !",
+                "Ces arbres ont vu trop de mal. Il est temps d'y apporter la justice.",
+                "En avant ! Aucune créature ne résistera à ma lame.",
+                "La forêt mystique... Un bon terrain pour prouver ma valeur.",
+                "Mon honneur me guide. Ces ténèbres ne m'effraient pas."
+            ],
+            2: [
+                "Ces grottes puent le mal. Ma lame brillera dans l'obscurité !",
+                "L'honneur d'un chevalier ne faiblit pas dans le noir.",
+                "Que ces cavernes tremblent ! J'arrive.",
+                "Même sans lumière, mon épée trouvera ses cibles.",
+                "Ces profondeurs seront purifiées par l'acier."
+            ],
+            3: [
+                "Le feu de ces terres n'est rien comparé au feu dans mon cœur !",
+                "La chaleur forge les meilleurs guerriers. Je suis prêt.",
+                "Ces flammes témoigneront de ma victoire !",
+                "Un vrai chevalier ne recule jamais, même face à l'enfer.",
+                "Que la lave consume mes ennemis avant ma lame !"
+            ],
+            4: [
+                "L'eau ralentit mes mouvements, mais pas ma détermination !",
+                "Ces profondeurs cachent peut-être Excalibur... ou sa réplique.",
+                "Un chevalier doit s'adapter. Je nagerai vers la victoire.",
+                "L'honneur ne coule pas. Je me battrai même sous l'eau.",
+                "Ces abysses apprendront à craindre la chevalerie !"
+            ],
+            5: [
+                "Quelle sorcellerie est-ce là ? Peu importe, l'acier vaincra toujours !",
+                "Ce monde étrange ne changera pas mon code d'honneur.",
+                "Machines ou monstres, tous tomberont devant ma lame.",
+                "Le futur a peut-être oublié les chevaliers. Je vais leur rappeler.",
+                "Même ici, l'honneur et le courage triompheront !"
+            ]
+        },
+        tank: {
+            1: [
+                "Cette forêt semble hostile... Parfait. Mon bouclier a soif d'action.",
+                "Qu'ils viennent tous. Je suis un mur infranchissable.",
+                "Ces arbres cachent des dangers ? Mon bouclier les accueillera.",
+                "La forêt mystique ne brisera pas ma défense.",
+                "Je suis le rempart. Rien ne passera."
+            ],
+            2: [
+                "L'obscurité ? Mes ennemis ne me verront pas venir non plus.",
+                "Ces grottes seront leur tombeau, pas le mien.",
+                "Mon bouclier résonne dans ces cavernes. Un avertissement.",
+                "Dans le noir, ma défense reste impénétrable.",
+                "Que les ténèbres m'engloutissent. Je ressortirai victorieux."
+            ],
+            3: [
+                "La chaleur fait fondre les faibles. Je suis forgé dans un feu plus fort.",
+                "Ces flammes ne feront que renforcer mon bouclier.",
+                "Un vrai défenseur ne craint pas le feu. Je l'embrasse.",
+                "La lave coule autour de moi. Je reste immobile comme la montagne.",
+                "Que ce brasier teste ma résistance !"
+            ],
+            4: [
+                "L'eau presse contre mon armure... Une nouvelle forme de résistance.",
+                "Ces profondeurs ne m'écraseront pas. Je suis plus lourd qu'elles.",
+                "Sous l'eau, ma défense reste absolue.",
+                "Les créatures marines apprendront la dureté de l'acier.",
+                "Je coule vers le fond ? Non, je m'ancre pour combattre."
+            ],
+            5: [
+                "Ces lumières étranges... Mon bouclier reflète tout.",
+                "La technologie contre l'acier ? L'acier gagne toujours.",
+                "Ce monde bizarre ne changera pas ma stratégie : tenir bon.",
+                "Machines ou bêtes, elles se briseront contre moi.",
+                "Le futur a des armes puissantes ? J'ai une volonté plus forte."
+            ]
+        },
+        mage: {
+            1: [
+                "Cette forêt pulse de magie ancienne... Je la sens dans mes veines.",
+                "Les arbres murmurent des secrets. Je comprends leur langage.",
+                "Ma magie prospérera dans cet environnement mystique.",
+                "Les énergies ici sont instables... Parfait pour mes expériences.",
+                "La forêt cache des pouvoirs oubliés. Je les réveillerai."
+            ],
+            2: [
+                "L'obscurité amplifie ma magie. Ces grottes seront mon sanctuaire.",
+                "Dans le noir, mes sorts brillent encore plus fort.",
+                "Ces cavernes résonnent de pouvoir ancien. Je le sens.",
+                "Les ténèbres ne sont qu'une toile pour ma lumière arcanique.",
+                "Chaque ombre cache un secret magique. Je les découvrirai tous."
+            ],
+            3: [
+                "Le feu élémentaire... Une source de pouvoir inépuisable !",
+                "Ces flammes alimenteront mes sorts les plus destructeurs.",
+                "La lave est chaos pur. Et le chaos est pouvoir.",
+                "Je danse avec les flammes. Elles m'obéissent.",
+                "Ce brasier infernal ? Un simple ingrédient pour ma magie."
+            ],
+            4: [
+                "L'eau amplifie mes enchantements. Je suis dans mon élément.",
+                "Ces profondeurs cachent une magie aquatique ancienne.",
+                "Sous la surface, mes sorts prennent des formes nouvelles.",
+                "L'eau est vie. L'eau est mort. L'eau est pouvoir.",
+                "Les courants portent ma magie plus loin que jamais."
+            ],
+            5: [
+                "Cette énergie... C'est de la magie sous une autre forme !",
+                "La technologie n'est que de la magie que je ne comprends pas encore.",
+                "Ces circuits brillent comme des runes. Fascinant.",
+                "Le futur et la magie fusionnent ici. Je dois étudier.",
+                "Même cette technologie cédera devant les arcanes anciennes."
+            ]
+        }
+    },
+
     // Définition des bonus
     PERKS: {
         // COMMUN (50%)
@@ -1297,6 +1449,115 @@ class Game {
         document.getElementById('class-back-btn').addEventListener('click', () => {
             this.showScreen('main-menu');
         });
+
+        // Système de dialogue
+        this.dialogueState = {
+            isTyping: false,
+            fullText: '',
+            currentIndex: 0,
+            typingSpeed: 50, // ms par caractère
+            lastZone: 0
+        };
+
+        // Event listeners pour le dialogue
+        document.getElementById('zone-dialogue').addEventListener('click', (e) => {
+            if (e.target.id !== 'dialogue-finish-btn') {
+                this.skipDialogueTyping();
+            }
+        });
+
+        document.getElementById('dialogue-finish-btn').addEventListener('click', () => {
+            this.finishDialogue();
+        });
+    }
+
+    // Afficher le dialogue de zone
+    showZoneDialogue(zone, classType) {
+        const zoneData = CONFIG.ZONES[zone];
+        const dialogues = CONFIG.HERO_DIALOGUES[classType]?.[zone];
+        
+        if (!dialogues || dialogues.length === 0) {
+            this.finishDialogue();
+            return;
+        }
+
+        // Choisir une phrase aléatoire
+        const randomDialogue = dialogues[Math.floor(Math.random() * dialogues.length)];
+
+        // Configurer l'image du héros
+        const heroImageMap = {
+            archer: './pixel_art/heros_talk/archer.png',
+            knight: './pixel_art/heros_talk/knight.png',
+            mage: './pixel_art/heros_talk/magic men.png',
+            tank: './pixel_art/heros_talk/tank.png'
+        };
+        document.getElementById('dialogue-hero-image').src = heroImageMap[classType];
+
+        // Configurer le titre de la zone
+        document.getElementById('dialogue-zone-title').textContent = `Zone ${zone}: ${zoneData.name}`;
+
+        // Réinitialiser l'état du dialogue
+        this.dialogueState.fullText = randomDialogue;
+        this.dialogueState.currentIndex = 0;
+        this.dialogueState.isTyping = true;
+
+        // Cacher le bouton et le curseur
+        document.getElementById('dialogue-finish-btn').style.display = 'none';
+        document.querySelector('.dialogue-cursor').classList.remove('visible');
+        document.getElementById('dialogue-text').textContent = '';
+
+        // Afficher l'écran de dialogue
+        this.showScreen('zone-dialogue');
+
+        // Démarrer l'animation de texte
+        this.typeDialogue();
+    }
+
+    // Animation de frappe du texte
+    typeDialogue() {
+        if (!this.dialogueState.isTyping) return;
+
+        const textElement = document.getElementById('dialogue-text');
+        
+        if (this.dialogueState.currentIndex < this.dialogueState.fullText.length) {
+            textElement.textContent += this.dialogueState.fullText[this.dialogueState.currentIndex];
+            this.dialogueState.currentIndex++;
+            
+            setTimeout(() => this.typeDialogue(), this.dialogueState.typingSpeed);
+        } else {
+            // Texte terminé
+            this.dialogueState.isTyping = false;
+            document.querySelector('.dialogue-cursor').classList.add('visible');
+            document.getElementById('dialogue-finish-btn').style.display = 'block';
+        }
+    }
+
+    // Afficher tout le texte immédiatement
+    skipDialogueTyping() {
+        if (this.dialogueState.isTyping) {
+            this.dialogueState.isTyping = false;
+            document.getElementById('dialogue-text').textContent = this.dialogueState.fullText;
+            document.querySelector('.dialogue-cursor').classList.add('visible');
+            document.getElementById('dialogue-finish-btn').style.display = 'block';
+        }
+    }
+
+    // Finir le dialogue et lancer le jeu
+    finishDialogue() {
+        this.state = 'playing';
+        this.showScreen('game-screen');
+
+        // Forcer le redimensionnement et démarrer le jeu
+        setTimeout(() => {
+            this.resizeCanvas();
+            this.updateHUD();
+            this.render();
+            
+            if (!this.gameLoopStarted) {
+                this.gameLoopStarted = true;
+                requestAnimationFrame((time) => this.gameLoop(time));
+            }
+        }, 100);
     }
     
     startGame(classType) {
@@ -1320,24 +1581,20 @@ class Game {
         
         this.spawnEnemies();
         
-        this.state = 'playing';
-        this.showScreen('game-screen');
+        // Initialiser le game loop flag
+        this.gameLoopStarted = false;
         
-        // Forcer le redimensionnement du canvas après un court délai
-        // pour permettre au DOM de se mettre à jour
-        setTimeout(() => {
-            this.resizeCanvas();
-            this.updateHUD();
-            
-            this.addLog(`Bienvenue, ${this.player.className}!`, 'info');
-            this.addLog('Utilisez ZQSD pour vous déplacer', 'info');
-            this.addLog('Cliquez pour attaquer', 'info');
-            
-            // Faire un premier rendu immédiatement
-            this.render();
-            
-            requestAnimationFrame((time) => this.gameLoop(time));
-        }, 100);
+        // Calculer la zone actuelle
+        const currentZone = Math.ceil(this.currentLevel / CONFIG.LEVELS_PER_ZONE);
+        this.dialogueState.lastZone = currentZone;
+        
+        // Afficher le dialogue de zone au lieu de lancer directement le jeu
+        this.showZoneDialogue(currentZone, classType);
+        
+        // Les logs seront ajoutés après le dialogue
+        this.addLog(`Bienvenue, ${this.player.className}!`, 'info');
+        this.addLog('Utilisez ZQSD pour vous déplacer', 'info');
+        this.addLog('Cliquez pour attaquer', 'info');
     }
     
     generateLevel() {
@@ -2167,7 +2424,15 @@ class Game {
         // Spawner nouveaux ennemis
         this.spawnEnemies();
         
-        this.updateHUD();
+        // Vérifier si on entre dans une nouvelle zone
+        const currentZone = Math.ceil(this.currentLevel / CONFIG.LEVELS_PER_ZONE);
+        if (currentZone !== this.dialogueState.lastZone) {
+            this.dialogueState.lastZone = currentZone;
+            // Afficher le dialogue de la nouvelle zone
+            this.showZoneDialogue(currentZone, this.player.classType);
+        } else {
+            this.updateHUD();
+        }
     }
     
     gameOver() {
