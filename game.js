@@ -2976,4 +2976,5 @@ let game;
 
 window.addEventListener('load', () => {
     game = new Game();
+    window.game = game; // Rendre accessible depuis la console
 });
