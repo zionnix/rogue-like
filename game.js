@@ -1235,54 +1235,6 @@ class ForestBoss extends Enemy {
     }
 }
 
-// Animation de liane pour le boss
-class VineAnimation extends Animation {
-    constructor(startX, startY, dx, dy, length, damage) {
-        super(startX, startY, 0.8);
-        this.dx = dx;
-        this.dy = dy;
-        this.length = length;
-        this.damage = damage;
-        this.hitPositions = [];
-    }
-    
-    render(ctx, camera, cellSize) {
-        const progress = Math.min(this.elapsed / (this.duration * 0.6), 1);
-        const currentLength = Math.floor(this.length * progress);
-        
-        for (let i = 1; i <= currentLength; i++) {
-            const vineX = this.x + this.dx * i;
-            const vineY = this.y + this.dy * i;
-            
-            const screenX = (vineX - camera.x) * cellSize + cellSize / 2;
-            const screenY = (vineY - camera.y) * cellSize + cellSize / 2;
-            
-            // Liane principale
-            const gradient = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, cellSize * 0.4);
-            gradient.addColorStop(0, '#4a7023');
-            gradient.addColorStop(1, '#2d5016');
-            
-            ctx.fillStyle = gradient;
-            ctx.beginPath();
-            ctx.arc(screenX, screenY, cellSize * 0.35, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Épines menaçantes
-            ctx.fillStyle = '#1a3009';
-            for (let j = 0; j < 6; j++) {
-                const angle = (j / 6) * Math.PI * 2 + this.elapsed * 3;
-                const spikeX = screenX + Math.cos(angle) * cellSize * 0.4;
-                const spikeY = screenY + Math.sin(angle) * cellSize * 0.4;
-                ctx.beginPath();
-                ctx.arc(spikeX, spikeY, cellSize * 0.1, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            
-            this.hitPositions.push({ x: vineX, y: vineY });
-        }
-    }
-}
-
 class Healer {
     constructor(x, y) {
         this.x = x;
@@ -1629,6 +1581,54 @@ class MeleeAnimation extends Animation {
     }
 }
 
+// Animation de liane pour le boss
+class VineAnimation extends Animation {
+    constructor(startX, startY, dx, dy, length, damage) {
+        super(startX, startY, 0.8);
+        this.dx = dx;
+        this.dy = dy;
+        this.length = length;
+        this.damage = damage;
+        this.hitPositions = [];
+    }
+
+    render(ctx, camera, cellSize) {
+        const progress = Math.min(this.elapsed / (this.duration * 0.6), 1);
+        const currentLength = Math.floor(this.length * progress);
+
+        for (let i = 1; i <= currentLength; i++) {
+            const vineX = this.x + this.dx * i;
+            const vineY = this.y + this.dy * i;
+
+            const screenX = (vineX - camera.x) * cellSize + cellSize / 2;
+            const screenY = (vineY - camera.y) * cellSize + cellSize / 2;
+
+            // Liane principale
+            const gradient = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, cellSize * 0.4);
+            gradient.addColorStop(0, '#4a7023');
+            gradient.addColorStop(1, '#2d5016');
+
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, cellSize * 0.35, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Épines menaçantes
+            ctx.fillStyle = '#1a3009';
+            for (let j = 0; j < 6; j++) {
+                const angle = (j / 6) * Math.PI * 2 + this.elapsed * 3;
+                const spikeX = screenX + Math.cos(angle) * cellSize * 0.4;
+                const spikeY = screenY + Math.sin(angle) * cellSize * 0.4;
+                ctx.beginPath();
+                ctx.arc(spikeX, spikeY, cellSize * 0.1, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            this.hitPositions.push({ x: vineX, y: vineY });
+        }
+    }
+}
+
 // ===== MOTEUR DE JEU PRINCIPAL =====
 class Game {
     constructor() {
@@ -1670,7 +1670,10 @@ class Game {
 
         // Taches de sang au sol
         this.bloodStains = [];
-        
+
+        // Décorations de niveau
+        this.decors = [];
+
         // Charger les sprites des personnages
         this.sprites = {
             archer: new Image(),
@@ -1740,7 +1743,28 @@ class Game {
         const small1 = new Image();
         small1.src = './pixel_art/ennemi/zone 1/crazy_gobelin.png';
         this.enemySprites[1].small.push(small1);
-        
+
+        // Charger les sprites de décors
+        this.decorSprites = {
+            1: [] // Zone 1
+        };
+
+        const tree = new Image();
+        tree.src = './pixel_art/decors/zone1/tree.png';
+        this.decorSprites[1].push(tree);
+
+        const treeFat = new Image();
+        treeFat.src = './pixel_art/decors/zone1/tree_fat.png';
+        this.decorSprites[1].push(treeFat);
+
+        const bush = new Image();
+        bush.src = './pixel_art/decors/zone1/bush.png';
+        this.decorSprites[1].push(bush);
+
+        const flower = new Image();
+        flower.src = './pixel_art/decors/zone1/flower.png';
+        this.decorSprites[1].push(flower);
+
         this.setupEventListeners();
     }
     
@@ -2046,6 +2070,50 @@ class Game {
 
         // Générer 0 à 2 salles de soins aléatoirement (sauf niveaux boss)
         this.generateHealingRooms();
+
+        // Générer les décorations sur les murs
+        this.generateDecors();
+    }
+
+    generateDecors() {
+        this.decors = [];
+
+        // Calculer la zone actuelle
+        const zone = Math.ceil(this.currentLevel / CONFIG.LEVELS_PER_ZONE);
+
+        // Vérifier si on a des sprites de décoration pour cette zone
+        if (!this.decorSprites[zone] || this.decorSprites[zone].length === 0) {
+            return;
+        }
+
+        // Parcourir la grille pour trouver les murs
+        const wallPositions = [];
+        for (let y = 0; y < this.dungeon.grid.length; y++) {
+            for (let x = 0; x < this.dungeon.grid[y].length; x++) {
+                if (this.dungeon.grid[y][x] === 1) { // C'est un mur
+                    wallPositions.push({ x, y });
+                }
+            }
+        }
+
+        // Calculer le nombre de décorations (environ 7% des murs)
+        const decorCount = Math.floor(wallPositions.length * 0.07);
+
+        // Mélanger les positions et sélectionner aléatoirement
+        const shuffled = wallPositions.sort(() => Math.random() - 0.5);
+        const selectedPositions = shuffled.slice(0, decorCount);
+
+        // Créer les décorations
+        for (const pos of selectedPositions) {
+            // Sélectionner un sprite aléatoire parmi ceux disponibles
+            const spriteIndex = Math.floor(Math.random() * this.decorSprites[zone].length);
+            this.decors.push({
+                x: pos.x,
+                y: pos.y,
+                spriteIndex: spriteIndex,
+                zone: zone
+            });
+        }
     }
 
     generateHealingRooms() {
@@ -4297,7 +4365,37 @@ class Game {
                 }
             }
         }
-        
+
+        // Dessiner les décorations sur les murs
+        for (const decor of this.decors) {
+            const dx = (decor.x - this.camera.x) * CONFIG.CELL_SIZE;
+            const dy = (decor.y - this.camera.y) * CONFIG.CELL_SIZE;
+
+            // Vérifier si la décoration est visible à l'écran
+            if (dx >= -CONFIG.CELL_SIZE && dx < this.canvas.width &&
+                dy >= -CONFIG.CELL_SIZE && dy < this.canvas.height) {
+
+                // Récupérer le sprite de décoration
+                const sprite = this.decorSprites[decor.zone]?.[decor.spriteIndex];
+
+                if (sprite && sprite.complete && sprite.naturalWidth > 0) {
+                    ctx.save();
+                    ctx.imageSmoothingEnabled = false;
+
+                    // Dessiner le sprite de décoration
+                    ctx.drawImage(
+                        sprite,
+                        dx,
+                        dy,
+                        CONFIG.CELL_SIZE,
+                        CONFIG.CELL_SIZE
+                    );
+
+                    ctx.restore();
+                }
+            }
+        }
+
         // Dessiner la sortie
         const exitX = (this.exit.x - this.camera.x) * CONFIG.CELL_SIZE;
         const exitY = (this.exit.y - this.camera.y) * CONFIG.CELL_SIZE;
