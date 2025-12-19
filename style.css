@@ -1340,6 +1340,23 @@ button:active {
   animation: hintFade 2s infinite;
 }
 
+/* ===== DIALOGUE BOSS ===== */
+#boss-dialogue {
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #2c0000 0%, #0f0000 100%);
+  z-index: 1000;
+}
+
+.dialogue-boss img {
+  filter: drop-shadow(0 0 20px rgba(231, 76, 60, 0.8)) !important;
+}
+
+.dialogue-boss.active {
+  border-color: rgba(231, 76, 60, 0.8) !important;
+  box-shadow: 0 0 30px rgba(231, 76, 60, 0.5) !important;
+}
+
 @keyframes hintFade {
   0%, 100% { opacity: 0.5; }
   50% { opacity: 0.8; }

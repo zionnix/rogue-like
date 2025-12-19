@@ -464,6 +464,16 @@ class DungeonGenerator {
     }
     
     findSpawnPoint() {
+        // Si c'est un niveau de boss, spawner dans un couloir, pas dans la salle du boss
+        if (this.isBossLevel && this.bossRoom) {
+            const bossRoom = this.bossRoom;
+            // Spawner dans le couloir nord (au-dessus de la salle)
+            return {
+                x: Math.floor(bossRoom.x + bossRoom.width / 2),
+                y: bossRoom.y - 3 // 3 cases au-dessus de la salle
+            };
+        }
+
         const room = this.rooms[0];
         return {
             x: Math.floor(room.x + room.width / 2),
@@ -2401,7 +2411,7 @@ class Game {
         const continueBtn = document.getElementById('second-dialogue-finish-btn');
 
         // Images
-        angelImage.src = './pixel_art/helping_talk/angel.png';
+        angelImage.src = './pixel_art/helping/angel.png';
         const heroImageMap = {
             archer: './pixel_art/hero/archer.png',
             knight: './pixel_art/hero/knight.png',
@@ -2536,29 +2546,92 @@ class Game {
     showBossDialogue() {
         const zone = Math.ceil(this.currentLevel / CONFIG.LEVELS_PER_ZONE);
 
-        // Dialogues du boss zone 1
+        // Dialogues du boss zone 1 - 5 variantes
         const bossMessages = {
-            1: "Porteur de Lumière…\n\nTu oses défier les ténèbres ?\n\nJe suis le gardien de ce royaume d'ombres.\n\nTon espoir finira ici."
+            1: [
+                "Porteur de Lumière…\n\nTu oses défier les ténèbres ?\n\nJe suis le gardien de ce royaume d'ombres.\n\nTon espoir finira ici.",
+                "Enfin… Un nouveau challenger.\n\nCombien de héros ont péri dans cette salle…\n\nTu ne seras qu'un de plus.",
+                "Les ombres murmurent ton nom.\n\nElles attendent ta chute.\n\nMoi aussi.",
+                "Tu sens cette aura ?\n\nC'est la mort qui t'entoure.\n\nBienvenue dans mon domaine.",
+                "Personne ne franchit cette porte.\n\nPersonne ne me vainc.\n\nJamais."
+            ]
         };
 
-        // Réponses des héros selon leur classe
+        // Dialogues spéciaux pour l'Archer et le Boss 1 (amoureux)
+        const archerBoss1Romance = [
+            "Toi…\n\nPourquoi es-tu revenue ?\n\nTu sais que je ne peux pas te laisser passer.\n\nMême si… mon cœur le voudrait.",
+            "À chaque fois que nos regards se croisent…\n\nJe ressens ce conflit déchirant.\n\nMon devoir contre… ce sentiment.\n\nPourquoi rends-tu tout si compliqué ?",
+            "Tu es revenue.\n\nJ'espérais… et redoutais ce moment.\n\nNous sommes ennemis, mais…\n\nMon âme ne peut s'y résoudre.",
+            "Chaque flèche que tu décoches…\n\nPerce mon armure et mon cœur.\n\nMais je dois te combattre.\n\nC'est mon destin maudit.",
+            "Pourquoi fallait-il que ce soit toi ?\n\nDans un autre monde, nous aurions…\n\nMais ici, seule la lame décide.\n\nPardonne-moi."
+        ];
+
+        const archerBoss1HeroResponses = [
+            "Je suis désolée…\n\nMais celui que j'aime est prisonnier ici.\n\nMême si tu occupes mes pensées…\n\nJe dois aller de l'avant.\n\nPardonne-moi.",
+            "Chaque fois que je te vois…\n\nMon cœur hésite.\n\nMais je ne peux pas abandonner.\n\nMême pour toi.\n\nMême pour nous.",
+            "Tu rends tout si difficile…\n\nCes sentiments, cette mission…\n\nMais je dois choisir.\n\nEt mon choix est fait.\n\nEn garde.",
+            "Je voudrais qu'il existe une autre voie…\n\nOù nous ne serions pas ennemis.\n\nMais ce n'est pas notre destin.\n\nBattons-nous… une dernière fois.",
+            "Mon cœur saigne déjà…\n\nAvant même que la bataille ne commence.\n\nMais je ne peux reculer.\n\nPour lui. Pour moi. Pour nous deux."
+        ];
+
+        // Réponses des héros selon leur classe - 5 variantes pour chaque
         const heroResponses = {
             archer: {
-                1: "Gardien des ténèbres…\n\nJe n'ai pas peur de toi.\n\nJe suis venu reprendre ce que tu as volé.\n\nEn garde!"
+                1: [
+                    "Gardien des ténèbres…\n\nJe n'ai pas peur de toi.\n\nJe suis venu reprendre ce que tu as volé.\n\nEn garde!",
+                    "Mes flèches ont déjà abattu des dizaines d'ennemis.\n\nTu ne seras qu'une cible de plus.\n\nPrépare-toi!",
+                    "La précision de mon arc…\n\nNe laisse aucune chance.\n\nTu tomberas comme les autres.",
+                    "Je suis venue de loin.\n\nPour sauver celui que j'aime.\n\nRien ne m'arrêtera. Personne.",
+                    "Chaque flèche porte mon espoir.\n\nMa détermination.\n\nTu ne peux pas gagner."
+                ]
             },
             knight: {
-                1: "Un gardien des ombres…\n\nJ'ai affronté pire que toi.\n\nMon honneur ne vacillera pas.\n\nBattons-nous!"
+                1: [
+                    "Un gardien des ombres…\n\nJ'ai affronté pire que toi.\n\nMon honneur ne vacillera pas.\n\nBattons-nous!",
+                    "Par mon serment de chevalier…\n\nJe ne reculerai pas.\n\nTon règne s'achève ici!",
+                    "L'honneur exige que je te combatte.\n\nLa justice exige que je te vainque.\n\nEn garde, démon!",
+                    "Ma lame a été forgée dans le courage.\n\nTrempée dans la loyauté.\n\nElle ne connaît pas la peur!",
+                    "Je suis le bouclier des innocents.\n\nL'épée de la justice.\n\nTombe, créature des ombres!"
+                ]
             },
             mage: {
-                1: "Les ténèbres…\n\nElles m'appellent depuis si longtemps.\n\nMais la Dernière Lumière brille encore.\n\nJe te vaincrai!"
+                1: [
+                    "Les ténèbres…\n\nElles m'appellent depuis si longtemps.\n\nMais la Dernière Lumière brille encore.\n\nJe te vaincrai!",
+                    "Magie contre ombre.\n\nLumière contre ténèbres.\n\nVoyons qui l'emportera!",
+                    "J'ai étudié les arcanes interdits.\n\nPour ce moment précis.\n\nTa fin approche!",
+                    "La Dernière Lumière vacille…\n\nMais elle ne s'éteindra pas.\n\nPas aujourd'hui!",
+                    "Les étoiles m'ont montré ta défaite.\n\nLe destin est écrit.\n\nAccepte-le!"
+                ]
             },
             tank: {
-                1: "Un gardien.\n\nParfait.\n\nJe suis le mur qui ne s'effondre jamais.\n\nViens!"
+                1: [
+                    "Un gardien.\n\nParfait.\n\nJe suis le mur qui ne s'effondre jamais.\n\nViens!",
+                    "Tu peux frapper.\n\nEncore et encore.\n\nJe tiendrai. Toujours.",
+                    "Ma défense est impénétrable.\n\nMa volonté, inébranlable.\n\nTu ne passeras pas!",
+                    "Chaque coup que je reçois…\n\nMe rend plus fort.\n\nFrappe-moi de toutes tes forces!",
+                    "Je suis la forteresse vivante.\n\nLe rempart indestructible.\n\nTu t'écraseras contre moi!"
+                ]
             }
         };
 
-        const bossMessage = bossMessages[zone] || "Prépare-toi à l'affrontement final!";
-        const heroMessage = heroResponses[this.player.classType]?.[zone] || "Je ne reculerai pas!";
+        // Choisir un dialogue aléatoire
+        let bossMessage, heroMessage;
+
+        // Cas spécial : Archer et Boss 1 (relation amoureuse)
+        if (this.player.classType === 'archer' && zone === 1) {
+            const randomIndex = Math.floor(Math.random() * archerBoss1Romance.length);
+            bossMessage = archerBoss1Romance[randomIndex];
+            heroMessage = archerBoss1HeroResponses[randomIndex];
+        } else {
+            // Dialogue normal
+            const bossDialogues = bossMessages[zone] || ["Prépare-toi à l'affrontement final!"];
+            const randomBossIndex = Math.floor(Math.random() * bossDialogues.length);
+            bossMessage = bossDialogues[randomBossIndex];
+
+            const heroDialogues = heroResponses[this.player.classType]?.[zone] || ["Je ne reculerai pas!"];
+            const randomHeroIndex = Math.floor(Math.random() * heroDialogues.length);
+            heroMessage = heroDialogues[randomHeroIndex];
+        }
 
         // Configurer le dialogue
         this.currentBossDialogue = {
