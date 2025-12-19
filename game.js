@@ -523,6 +523,370 @@ class Entity {
     }
 }
 
+// ===== SYSTÈME D'ANIMATIONS =====
+class Animation {
+    constructor(x, y, duration) {
+        this.x = x;
+        this.y = y;
+        this.duration = duration;
+        this.elapsed = 0;
+        this.finished = false;
+        this.onComplete = null; // Callback appelée à la fin de l'animation
+        this.hasTriggeredComplete = false;
+    }
+
+    update(deltaTime) {
+        this.elapsed += deltaTime;
+        if (this.elapsed >= this.duration && !this.hasTriggeredComplete) {
+            this.finished = true;
+            this.hasTriggeredComplete = true;
+            if (this.onComplete) {
+                this.onComplete();
+            }
+        }
+    }
+
+    render(ctx, camera, cellSize) {
+        // Override dans les sous-classes
+    }
+}
+
+// Animation de projectile (flèche, boule magique)
+class ProjectileAnimation extends Animation {
+    constructor(startX, startY, endX, endY, type, speed = 15) {
+        super(startX, startY, 0.5);
+        this.startX = startX;
+        this.startY = startY;
+        this.endX = endX;
+        this.endY = endY;
+        this.type = type; // 'arrow' ou 'magic'
+        this.speed = speed;
+
+        // Calculer la durée en fonction de la distance
+        const distance = Math.hypot(endX - startX, endY - startY);
+        this.duration = distance / speed;
+    }
+
+    update(deltaTime) {
+        super.update(deltaTime);
+    }
+
+    render(ctx, camera, cellSize) {
+        const progress = Math.min(this.elapsed / this.duration, 1);
+        const currentX = this.startX + (this.endX - this.startX) * progress;
+        const currentY = this.startY + (this.endY - this.startY) * progress;
+
+        const screenX = (currentX - camera.x) * cellSize + cellSize / 2;
+        const screenY = (currentY - camera.y) * cellSize + cellSize / 2;
+
+        if (this.type === 'arrow') {
+            this.renderArrow(ctx, screenX, screenY, cellSize);
+        } else if (this.type === 'magic') {
+            this.renderMagicBall(ctx, screenX, screenY, cellSize);
+        } else if (this.type === 'fireball') {
+            this.renderFireball(ctx, screenX, screenY, cellSize);
+        }
+    }
+
+    renderArrow(ctx, x, y, cellSize) {
+        // Calculer l'angle de la flèche
+        const angle = Math.atan2(this.endY - this.startY, this.endX - this.startX);
+
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+
+        // Flèche en pixel art
+        const size = cellSize * 0.6;
+        ctx.fillStyle = '#8b4513'; // Marron pour le bois
+        ctx.fillRect(-size/2, -2, size * 0.7, 4);
+
+        ctx.fillStyle = '#c0c0c0'; // Gris pour la pointe
+        ctx.beginPath();
+        ctx.moveTo(size/2 - 2, 0);
+        ctx.lineTo(size/2 + 4, 0);
+        ctx.lineTo(size/2, -3);
+        ctx.lineTo(size/2, 3);
+        ctx.closePath();
+        ctx.fill();
+
+        // Plumes
+        ctx.fillStyle = '#ff6b6b';
+        ctx.fillRect(-size/2 - 2, -3, 4, 2);
+        ctx.fillRect(-size/2 - 2, 1, 4, 2);
+
+        ctx.restore();
+    }
+
+    renderMagicBall(ctx, x, y, cellSize) {
+        const progress = this.elapsed / this.duration;
+        const size = cellSize * 0.4;
+
+        // Effet de pulsation
+        const pulse = 1 + Math.sin(this.elapsed * 20) * 0.2;
+
+        // Aura extérieure
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, size * pulse);
+        gradient.addColorStop(0, 'rgba(100, 149, 237, 0.8)');
+        gradient.addColorStop(0.5, 'rgba(65, 105, 225, 0.4)');
+        gradient.addColorStop(1, 'rgba(65, 105, 225, 0)');
+
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(x, y, size * pulse, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Boule centrale
+        ctx.fillStyle = '#6495ED';
+        ctx.beginPath();
+        ctx.arc(x, y, size * 0.6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Centre brillant
+        ctx.fillStyle = '#B0C4DE';
+        ctx.beginPath();
+        ctx.arc(x - size * 0.15, y - size * 0.15, size * 0.25, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Particules
+        for (let i = 0; i < 3; i++) {
+            const angle = (this.elapsed * 5 + i * Math.PI * 2 / 3);
+            const px = x + Math.cos(angle) * size * 0.8;
+            const py = y + Math.sin(angle) * size * 0.8;
+
+            ctx.fillStyle = 'rgba(173, 216, 230, 0.6)';
+            ctx.fillRect(px - 1, py - 1, 2, 2);
+        }
+    }
+
+    renderFireball(ctx, x, y, cellSize) {
+        const size = cellSize * 0.5;
+
+        // Effet de pulsation plus intense
+        const pulse = 1 + Math.sin(this.elapsed * 15) * 0.3;
+
+        // Traînée de feu (simplifiée sans référence camera)
+        for (let i = 1; i < 5; i++) {
+            const trailAlpha = 0.3 * (1 - i * 0.2);
+            const trailSize = size * 0.4 * (1 - i * 0.15);
+
+            ctx.fillStyle = `rgba(255, 107, 0, ${trailAlpha})`;
+            ctx.beginPath();
+            ctx.arc(x, y, trailSize, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Aura extérieure (orange/rouge)
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, size * pulse);
+        gradient.addColorStop(0, 'rgba(255, 69, 0, 0.9)');
+        gradient.addColorStop(0.4, 'rgba(255, 140, 0, 0.6)');
+        gradient.addColorStop(0.7, 'rgba(255, 69, 0, 0.3)');
+        gradient.addColorStop(1, 'rgba(255, 69, 0, 0)');
+
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(x, y, size * pulse, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Boule centrale (rouge-orange)
+        ctx.fillStyle = '#ff4500';
+        ctx.beginPath();
+        ctx.arc(x, y, size * 0.6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Centre brillant (jaune)
+        ctx.fillStyle = '#ffff00';
+        ctx.beginPath();
+        ctx.arc(x - size * 0.15, y - size * 0.15, size * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Flammes/particules autour
+        for (let i = 0; i < 5; i++) {
+            const angle = (this.elapsed * 10 + i * Math.PI * 2 / 5);
+            const px = x + Math.cos(angle) * size * 0.7;
+            const py = y + Math.sin(angle) * size * 0.7;
+
+            ctx.fillStyle = 'rgba(255, 215, 0, 0.8)';
+            ctx.fillRect(px - 2, py - 2, 4, 4);
+        }
+    }
+}
+
+// Animation de coup de mêlée (chevalier, bouclier)
+class MeleeAnimation extends Animation {
+    constructor(playerX, playerY, targetX, targetY, type) {
+        super(playerX, playerY, 0.3);
+        this.playerX = playerX;
+        this.playerY = playerY;
+        this.targetX = targetX;
+        this.targetY = targetY;
+        this.type = type; // 'knight' ou 'tank'
+    }
+
+    render(ctx, camera, cellSize) {
+        const progress = this.elapsed / this.duration;
+
+        // Animation en 3 phases: montée (0-0.4), frappe (0.4-0.6), retour (0.6-1)
+        let offsetProgress;
+        if (progress < 0.4) {
+            offsetProgress = progress / 0.4; // Montée
+        } else if (progress < 0.6) {
+            offsetProgress = 1; // Pic de la frappe
+        } else {
+            offsetProgress = 1 - (progress - 0.6) / 0.4; // Retour
+        }
+
+        const dx = this.targetX - this.playerX;
+        const dy = this.targetY - this.playerY;
+        const distance = Math.hypot(dx, dy);
+        const dirX = dx / distance;
+        const dirY = dy / distance;
+
+        // Position de l'effet
+        const effectX = this.playerX + dirX * offsetProgress * 0.6;
+        const effectY = this.playerY + dirY * offsetProgress * 0.6;
+
+        const screenX = (effectX - camera.x) * cellSize + cellSize / 2;
+        const screenY = (effectY - camera.y) * cellSize + cellSize / 2;
+
+        if (this.type === 'knight') {
+            this.renderKnightSlash(ctx, screenX, screenY, cellSize, offsetProgress);
+        } else if (this.type === 'tank') {
+            this.renderTankSmash(ctx, screenX, screenY, cellSize, offsetProgress);
+        }
+    }
+
+    renderKnightSlash(ctx, x, y, cellSize, progress) {
+        const angle = Math.atan2(this.targetY - this.playerY, this.targetX - this.playerX);
+        const slashLength = cellSize * 1.2 * progress;
+
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle + Math.PI / 4 * (1 - progress));
+
+        // Traînée d'épée
+        const gradient = ctx.createLinearGradient(0, 0, slashLength, 0);
+        gradient.addColorStop(0, 'rgba(192, 192, 192, 0)');
+        gradient.addColorStop(0.5, 'rgba(192, 192, 192, 0.8)');
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0.4)');
+
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(slashLength, 0);
+        ctx.stroke();
+
+        // Effet d'impact
+        if (progress > 0.8) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.beginPath();
+            ctx.arc(slashLength, 0, cellSize * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        ctx.restore();
+    }
+
+    renderTankSmash(ctx, x, y, cellSize, progress) {
+        const size = cellSize * 1.5 * progress;
+
+        // Effet d'onde de choc
+        ctx.save();
+
+        // Cercle d'impact principal
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, size);
+        gradient.addColorStop(0, 'rgba(255, 165, 0, 0.6)');
+        gradient.addColorStop(0.5, 'rgba(255, 140, 0, 0.3)');
+        gradient.addColorStop(1, 'rgba(255, 140, 0, 0)');
+
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Lignes d'impact
+        if (progress > 0.5) {
+            ctx.strokeStyle = 'rgba(255, 200, 0, 0.8)';
+            ctx.lineWidth = 3;
+
+            for (let i = 0; i < 4; i++) {
+                const angle = i * Math.PI / 2 + this.elapsed * 10;
+                const length = size * 0.8;
+
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(
+                    x + Math.cos(angle) * length,
+                    y + Math.sin(angle) * length
+                );
+                ctx.stroke();
+            }
+        }
+
+        // Particules de poussière
+        for (let i = 0; i < 6; i++) {
+            const angle = i * Math.PI / 3 + this.elapsed * 5;
+            const dist = size * 0.6;
+            const px = x + Math.cos(angle) * dist;
+            const py = y + Math.sin(angle) * dist;
+
+            ctx.fillStyle = 'rgba(139, 69, 19, 0.5)';
+            ctx.fillRect(px - 2, py - 2, 4, 4);
+        }
+
+        ctx.restore();
+    }
+}
+
+// Animation de liane pour le boss
+class VineAnimation extends Animation {
+    constructor(startX, startY, dx, dy, length, damage) {
+        super(startX, startY, 0.8);
+        this.dx = dx;
+        this.dy = dy;
+        this.length = length;
+        this.damage = damage;
+        this.hitPositions = [];
+    }
+
+    render(ctx, camera, cellSize) {
+        const progress = Math.min(this.elapsed / (this.duration * 0.6), 1);
+        const currentLength = Math.floor(this.length * progress);
+
+        for (let i = 1; i <= currentLength; i++) {
+            const vineX = this.x + this.dx * i;
+            const vineY = this.y + this.dy * i;
+
+            const screenX = (vineX - camera.x) * cellSize + cellSize / 2;
+            const screenY = (vineY - camera.y) * cellSize + cellSize / 2;
+
+            // Liane principale
+            const gradient = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, cellSize * 0.4);
+            gradient.addColorStop(0, '#4a7023');
+            gradient.addColorStop(1, '#2d5016');
+
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, cellSize * 0.35, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Épines menaçantes
+            ctx.fillStyle = '#1a3009';
+            for (let j = 0; j < 6; j++) {
+                const angle = (j / 6) * Math.PI * 2 + this.elapsed * 3;
+                const spikeX = screenX + Math.cos(angle) * cellSize * 0.4;
+                const spikeY = screenY + Math.sin(angle) * cellSize * 0.4;
+                ctx.beginPath();
+                ctx.arc(spikeX, spikeY, cellSize * 0.1, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            this.hitPositions.push({ x: vineX, y: vineY });
+        }
+    }
+}
+
 class Player extends Entity {
     constructor(x, y, classType) {
         const classData = CONFIG.CLASSES[classType];
@@ -1262,370 +1626,6 @@ class Healer {
 
     update(deltaTime) {
         this.animationTimer += deltaTime;
-    }
-}
-
-// ===== SYSTÈME D'ANIMATIONS =====
-class Animation {
-    constructor(x, y, duration) {
-        this.x = x;
-        this.y = y;
-        this.duration = duration;
-        this.elapsed = 0;
-        this.finished = false;
-        this.onComplete = null; // Callback appelée à la fin de l'animation
-        this.hasTriggeredComplete = false;
-    }
-    
-    update(deltaTime) {
-        this.elapsed += deltaTime;
-        if (this.elapsed >= this.duration && !this.hasTriggeredComplete) {
-            this.finished = true;
-            this.hasTriggeredComplete = true;
-            if (this.onComplete) {
-                this.onComplete();
-            }
-        }
-    }
-    
-    render(ctx, camera, cellSize) {
-        // Override dans les sous-classes
-    }
-}
-
-// Animation de projectile (flèche, boule magique)
-class ProjectileAnimation extends Animation {
-    constructor(startX, startY, endX, endY, type, speed = 15) {
-        super(startX, startY, 0.5);
-        this.startX = startX;
-        this.startY = startY;
-        this.endX = endX;
-        this.endY = endY;
-        this.type = type; // 'arrow' ou 'magic'
-        this.speed = speed;
-        
-        // Calculer la durée en fonction de la distance
-        const distance = Math.hypot(endX - startX, endY - startY);
-        this.duration = distance / speed;
-    }
-    
-    update(deltaTime) {
-        super.update(deltaTime);
-    }
-    
-    render(ctx, camera, cellSize) {
-        const progress = Math.min(this.elapsed / this.duration, 1);
-        const currentX = this.startX + (this.endX - this.startX) * progress;
-        const currentY = this.startY + (this.endY - this.startY) * progress;
-
-        const screenX = (currentX - camera.x) * cellSize + cellSize / 2;
-        const screenY = (currentY - camera.y) * cellSize + cellSize / 2;
-
-        if (this.type === 'arrow') {
-            this.renderArrow(ctx, screenX, screenY, cellSize);
-        } else if (this.type === 'magic') {
-            this.renderMagicBall(ctx, screenX, screenY, cellSize);
-        } else if (this.type === 'fireball') {
-            this.renderFireball(ctx, screenX, screenY, cellSize);
-        }
-    }
-    
-    renderArrow(ctx, x, y, cellSize) {
-        // Calculer l'angle de la flèche
-        const angle = Math.atan2(this.endY - this.startY, this.endX - this.startX);
-        
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(angle);
-        
-        // Flèche en pixel art
-        const size = cellSize * 0.6;
-        ctx.fillStyle = '#8b4513'; // Marron pour le bois
-        ctx.fillRect(-size/2, -2, size * 0.7, 4);
-        
-        ctx.fillStyle = '#c0c0c0'; // Gris pour la pointe
-        ctx.beginPath();
-        ctx.moveTo(size/2 - 2, 0);
-        ctx.lineTo(size/2 + 4, 0);
-        ctx.lineTo(size/2, -3);
-        ctx.lineTo(size/2, 3);
-        ctx.closePath();
-        ctx.fill();
-        
-        // Plumes
-        ctx.fillStyle = '#ff6b6b';
-        ctx.fillRect(-size/2 - 2, -3, 4, 2);
-        ctx.fillRect(-size/2 - 2, 1, 4, 2);
-        
-        ctx.restore();
-    }
-    
-    renderMagicBall(ctx, x, y, cellSize) {
-        const progress = this.elapsed / this.duration;
-        const size = cellSize * 0.4;
-        
-        // Effet de pulsation
-        const pulse = 1 + Math.sin(this.elapsed * 20) * 0.2;
-        
-        // Aura extérieure
-        const gradient = ctx.createRadialGradient(x, y, 0, x, y, size * pulse);
-        gradient.addColorStop(0, 'rgba(100, 149, 237, 0.8)');
-        gradient.addColorStop(0.5, 'rgba(65, 105, 225, 0.4)');
-        gradient.addColorStop(1, 'rgba(65, 105, 225, 0)');
-        
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(x, y, size * pulse, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Boule centrale
-        ctx.fillStyle = '#6495ED';
-        ctx.beginPath();
-        ctx.arc(x, y, size * 0.6, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Centre brillant
-        ctx.fillStyle = '#B0C4DE';
-        ctx.beginPath();
-        ctx.arc(x - size * 0.15, y - size * 0.15, size * 0.25, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Particules
-        for (let i = 0; i < 3; i++) {
-            const angle = (this.elapsed * 5 + i * Math.PI * 2 / 3);
-            const px = x + Math.cos(angle) * size * 0.8;
-            const py = y + Math.sin(angle) * size * 0.8;
-
-            ctx.fillStyle = 'rgba(173, 216, 230, 0.6)';
-            ctx.fillRect(px - 1, py - 1, 2, 2);
-        }
-    }
-
-    renderFireball(ctx, x, y, cellSize) {
-        const size = cellSize * 0.5;
-
-        // Effet de pulsation plus intense
-        const pulse = 1 + Math.sin(this.elapsed * 15) * 0.3;
-
-        // Traînée de feu (simplifiée sans référence camera)
-        for (let i = 1; i < 5; i++) {
-            const trailAlpha = 0.3 * (1 - i * 0.2);
-            const trailSize = size * 0.4 * (1 - i * 0.15);
-
-            ctx.fillStyle = `rgba(255, 107, 0, ${trailAlpha})`;
-            ctx.beginPath();
-            ctx.arc(x, y, trailSize, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        // Aura extérieure (orange/rouge)
-        const gradient = ctx.createRadialGradient(x, y, 0, x, y, size * pulse);
-        gradient.addColorStop(0, 'rgba(255, 69, 0, 0.9)');
-        gradient.addColorStop(0.4, 'rgba(255, 140, 0, 0.6)');
-        gradient.addColorStop(0.7, 'rgba(255, 69, 0, 0.3)');
-        gradient.addColorStop(1, 'rgba(255, 69, 0, 0)');
-
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(x, y, size * pulse, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Boule centrale (rouge-orange)
-        ctx.fillStyle = '#ff4500';
-        ctx.beginPath();
-        ctx.arc(x, y, size * 0.6, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Centre brillant (jaune)
-        ctx.fillStyle = '#ffff00';
-        ctx.beginPath();
-        ctx.arc(x - size * 0.15, y - size * 0.15, size * 0.3, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Flammes/particules autour
-        for (let i = 0; i < 5; i++) {
-            const angle = (this.elapsed * 10 + i * Math.PI * 2 / 5);
-            const px = x + Math.cos(angle) * size * 0.7;
-            const py = y + Math.sin(angle) * size * 0.7;
-
-            ctx.fillStyle = 'rgba(255, 215, 0, 0.8)';
-            ctx.fillRect(px - 2, py - 2, 4, 4);
-        }
-    }
-}
-
-// Animation de coup de mêlée (chevalier, bouclier)
-class MeleeAnimation extends Animation {
-    constructor(playerX, playerY, targetX, targetY, type) {
-        super(playerX, playerY, 0.3);
-        this.playerX = playerX;
-        this.playerY = playerY;
-        this.targetX = targetX;
-        this.targetY = targetY;
-        this.type = type; // 'knight' ou 'tank'
-    }
-    
-    render(ctx, camera, cellSize) {
-        const progress = this.elapsed / this.duration;
-        
-        // Animation en 3 phases: montée (0-0.4), frappe (0.4-0.6), retour (0.6-1)
-        let offsetProgress;
-        if (progress < 0.4) {
-            offsetProgress = progress / 0.4; // Montée
-        } else if (progress < 0.6) {
-            offsetProgress = 1; // Pic de la frappe
-        } else {
-            offsetProgress = 1 - (progress - 0.6) / 0.4; // Retour
-        }
-        
-        const dx = this.targetX - this.playerX;
-        const dy = this.targetY - this.playerY;
-        const distance = Math.hypot(dx, dy);
-        const dirX = dx / distance;
-        const dirY = dy / distance;
-        
-        // Position de l'effet
-        const effectX = this.playerX + dirX * offsetProgress * 0.6;
-        const effectY = this.playerY + dirY * offsetProgress * 0.6;
-        
-        const screenX = (effectX - camera.x) * cellSize + cellSize / 2;
-        const screenY = (effectY - camera.y) * cellSize + cellSize / 2;
-        
-        if (this.type === 'knight') {
-            this.renderKnightSlash(ctx, screenX, screenY, cellSize, offsetProgress);
-        } else if (this.type === 'tank') {
-            this.renderTankSmash(ctx, screenX, screenY, cellSize, offsetProgress);
-        }
-    }
-    
-    renderKnightSlash(ctx, x, y, cellSize, progress) {
-        const angle = Math.atan2(this.targetY - this.playerY, this.targetX - this.playerX);
-        const slashLength = cellSize * 1.2 * progress;
-        
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(angle + Math.PI / 4 * (1 - progress));
-        
-        // Traînée d'épée
-        const gradient = ctx.createLinearGradient(0, 0, slashLength, 0);
-        gradient.addColorStop(0, 'rgba(192, 192, 192, 0)');
-        gradient.addColorStop(0.5, 'rgba(192, 192, 192, 0.8)');
-        gradient.addColorStop(1, 'rgba(255, 255, 255, 0.4)');
-        
-        ctx.strokeStyle = gradient;
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(slashLength, 0);
-        ctx.stroke();
-        
-        // Effet d'impact
-        if (progress > 0.8) {
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-            ctx.beginPath();
-            ctx.arc(slashLength, 0, cellSize * 0.3, 0, Math.PI * 2);
-            ctx.fill();
-        }
-        
-        ctx.restore();
-    }
-    
-    renderTankSmash(ctx, x, y, cellSize, progress) {
-        const size = cellSize * 1.5 * progress;
-        
-        // Effet d'onde de choc
-        ctx.save();
-        
-        // Cercle d'impact principal
-        const gradient = ctx.createRadialGradient(x, y, 0, x, y, size);
-        gradient.addColorStop(0, 'rgba(255, 165, 0, 0.6)');
-        gradient.addColorStop(0.5, 'rgba(255, 140, 0, 0.3)');
-        gradient.addColorStop(1, 'rgba(255, 140, 0, 0)');
-        
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(x, y, size, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Lignes d'impact
-        if (progress > 0.5) {
-            ctx.strokeStyle = 'rgba(255, 200, 0, 0.8)';
-            ctx.lineWidth = 3;
-            
-            for (let i = 0; i < 4; i++) {
-                const angle = i * Math.PI / 2 + this.elapsed * 10;
-                const length = size * 0.8;
-                
-                ctx.beginPath();
-                ctx.moveTo(x, y);
-                ctx.lineTo(
-                    x + Math.cos(angle) * length,
-                    y + Math.sin(angle) * length
-                );
-                ctx.stroke();
-            }
-        }
-        
-        // Particules de poussière
-        for (let i = 0; i < 6; i++) {
-            const angle = i * Math.PI / 3 + this.elapsed * 5;
-            const dist = size * 0.6;
-            const px = x + Math.cos(angle) * dist;
-            const py = y + Math.sin(angle) * dist;
-            
-            ctx.fillStyle = 'rgba(139, 69, 19, 0.5)';
-            ctx.fillRect(px - 2, py - 2, 4, 4);
-        }
-        
-        ctx.restore();
-    }
-}
-
-// Animation de liane pour le boss
-class VineAnimation extends Animation {
-    constructor(startX, startY, dx, dy, length, damage) {
-        super(startX, startY, 0.8);
-        this.dx = dx;
-        this.dy = dy;
-        this.length = length;
-        this.damage = damage;
-        this.hitPositions = [];
-    }
-
-    render(ctx, camera, cellSize) {
-        const progress = Math.min(this.elapsed / (this.duration * 0.6), 1);
-        const currentLength = Math.floor(this.length * progress);
-
-        for (let i = 1; i <= currentLength; i++) {
-            const vineX = this.x + this.dx * i;
-            const vineY = this.y + this.dy * i;
-
-            const screenX = (vineX - camera.x) * cellSize + cellSize / 2;
-            const screenY = (vineY - camera.y) * cellSize + cellSize / 2;
-
-            // Liane principale
-            const gradient = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, cellSize * 0.4);
-            gradient.addColorStop(0, '#4a7023');
-            gradient.addColorStop(1, '#2d5016');
-
-            ctx.fillStyle = gradient;
-            ctx.beginPath();
-            ctx.arc(screenX, screenY, cellSize * 0.35, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Épines menaçantes
-            ctx.fillStyle = '#1a3009';
-            for (let j = 0; j < 6; j++) {
-                const angle = (j / 6) * Math.PI * 2 + this.elapsed * 3;
-                const spikeX = screenX + Math.cos(angle) * cellSize * 0.4;
-                const spikeY = screenY + Math.sin(angle) * cellSize * 0.4;
-                ctx.beginPath();
-                ctx.arc(spikeX, spikeY, cellSize * 0.1, 0, Math.PI * 2);
-                ctx.fill();
-            }
-
-            this.hitPositions.push({ x: vineX, y: vineY });
-        }
     }
 }
 
