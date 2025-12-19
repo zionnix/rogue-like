@@ -2401,7 +2401,7 @@ class Game {
         const continueBtn = document.getElementById('second-dialogue-finish-btn');
 
         // Images
-        angelImage.src = './pixel_art/helping_talk/healer.png';
+        angelImage.src = './pixel_art/helping_talk/angel.png';
         const heroImageMap = {
             archer: './pixel_art/hero/archer.png',
             knight: './pixel_art/hero/knight.png',
