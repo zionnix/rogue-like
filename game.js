@@ -798,6 +798,7 @@ class Player extends Entity {
 
         // Seconde vie
         if (this.health <= 0 && this.perkEffects.hasSecondLife && !this.perkEffects.secondLifeUsed) {
+            console.log('💛 Seconde vie activée! hasSecondLife:', this.perkEffects.hasSecondLife, 'used:', this.perkEffects.secondLifeUsed);
             this.perkEffects.secondLifeUsed = true;
             this.health = Math.floor(this.maxHealth * 0.5);
             
@@ -2177,6 +2178,8 @@ class Game {
 
     // Animation de seconde vie
     playSecondLifeAnimation() {
+        console.log('🔥 playSecondLifeAnimation appelée!');
+        
         // Mettre le jeu en pause
         this.state = 'second_life_animation';
 
@@ -2187,7 +2190,30 @@ class Game {
             mage: './pixel_art/heros_talk/magic men.png',
             tank: './pixel_art/heros_talk/tank.png'
         };
-        document.getElementById('second-life-hero-image').src = heroImageMap[this.player.classType];
+        
+        const heroImage = document.getElementById('second-life-hero-image');
+        heroImage.src = heroImageMap[this.player.classType];
+
+        // Forcer le redémarrage des animations CSS
+        const container = document.querySelector('.second-life-container');
+        const hero = document.querySelector('.second-life-hero');
+        const heart = document.querySelector('.second-life-heart');
+        const text = document.querySelector('.second-life-text');
+
+        // Retirer et réajouter les classes pour relancer les animations
+        [hero, heart, text].forEach(el => {
+            el.style.animation = 'none';
+            el.offsetHeight; // Force reflow
+        });
+        
+        // Réappliquer les animations
+        setTimeout(() => {
+            hero.style.animation = '';
+            heart.style.animation = '';
+            text.style.animation = '';
+            heroImage.style.animation = '';
+            heroImage.style.filter = 'brightness(0) invert(1)';
+        }, 10);
 
         // Afficher l'écran d'animation
         this.showScreen('second-life-screen');
