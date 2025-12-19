@@ -4314,16 +4314,51 @@ window.killAllEnemies = function() {
         return;
     }
 
-    // Tuer tous les ennemis
-    game.enemies.forEach(enemy => {
-        enemy.health = 0;
-    });
+    // Vérifier si un boss est présent
+    const boss = game.enemies.find(enemy => enemy.isBoss);
 
-    // Nettoyer les ennemis morts
-    game.enemies = game.enemies.filter(enemy => enemy.health > 0);
+    if (boss) {
+        // Si c'est un boss, déclencher le dialogue de défaite
+        game.defeatedBoss = boss;
+        game.defeatedBoss.zone = boss.zone;
 
-    console.log(`💀 ${enemyCount} ennemi(s) éliminé(s)!`);
-    game.addLog(`💀 Tous les ennemis ont été éliminés!`, 'damage');
+        // Créer des effets de sang
+        game.createBloodEffects(boss.x, boss.y);
+
+        // Tuer les autres ennemis normalement
+        game.enemies.forEach(enemy => {
+            if (!enemy.isBoss) {
+                enemy.health = 0;
+            }
+        });
+
+        // Supprimer seulement les ennemis normaux
+        game.enemies = game.enemies.filter(enemy => enemy.health > 0 || enemy.isBoss);
+
+        // Donner l'XP du boss
+        game.player.gainXP(boss.xpValue);
+        const xpText = boss.xpValue === 'level' ? 'LEVEL UP!' : `+${boss.xpValue} XP`;
+        game.addFloatingText(game.player.x, game.player.y, xpText, '#ffd93d');
+
+        console.log(`💀 ${enemyCount - 1} ennemi(s) éliminé(s)!`);
+        console.log(`👑 Boss détecté - Lancement du dialogue de défaite...`);
+
+        // Déclencher le dialogue après un court délai
+        setTimeout(() => {
+            game.showBossDefeatDialogue();
+        }, 500);
+    } else {
+        // Pas de boss, tuer tous les ennemis normalement
+        game.enemies.forEach(enemy => {
+            enemy.health = 0;
+        });
+
+        // Nettoyer les ennemis morts
+        game.enemies = game.enemies.filter(enemy => enemy.health > 0);
+
+        console.log(`💀 ${enemyCount} ennemi(s) éliminé(s)!`);
+        game.addLog(`💀 Tous les ennemis ont été éliminés!`, 'damage');
+    }
 };
 
 /**
