@@ -536,20 +536,15 @@ class Player extends Entity {
                 this.perkEffects.ringsActive = true;
                 this.perkEffects.ringsPermanent = true;
             } else {
-                // Niveaux 1-5: 3 secondes actif, 15 secondes de cooldown
+                // Niveaux 1-5: disparaît après un tour complet, 15 secondes de cooldown
                 if (this.perkEffects.ringsActive) {
-                    this.perkEffects.ringsTimer -= deltaTime;
-                    if (this.perkEffects.ringsTimer <= 0) {
-                        this.perkEffects.ringsActive = false;
-                        this.perkEffects.ringsCooldown = 15;
-                        this.perkEffects.ringsHitEnemies.clear();
-                    }
+                    // La désactivation se fait dans la rotation quand on atteint 2π
                 } else if (this.perkEffects.ringsCooldown > 0) {
                     this.perkEffects.ringsCooldown -= deltaTime;
                 } else {
                     // Activer les anneaux
                     this.perkEffects.ringsActive = true;
-                    this.perkEffects.ringsTimer = 3;
+                    this.perkEffects.ringsRotation = 0; // Commencer à 0
                     this.perkEffects.ringsHitEnemies.clear();
                 }
             }
@@ -557,8 +552,17 @@ class Player extends Entity {
             // Rotation des anneaux (tour complet en 5 secondes)
             if (this.perkEffects.ringsActive) {
                 this.perkEffects.ringsRotation += (deltaTime / 5) * Math.PI * 2;
+                
+                // Désactiver après un tour complet (sauf si permanent)
                 if (this.perkEffects.ringsRotation >= Math.PI * 2) {
-                    this.perkEffects.ringsRotation -= Math.PI * 2;
+                    if (!this.perkEffects.ringsPermanent) {
+                        this.perkEffects.ringsActive = false;
+                        this.perkEffects.ringsCooldown = 15;
+                        this.perkEffects.ringsHitEnemies.clear();
+                        this.perkEffects.ringsRotation = 0;
+                    } else {
+                        this.perkEffects.ringsRotation -= Math.PI * 2;
+                    }
                 }
             }
         }
@@ -1920,6 +1924,7 @@ class Game {
         const numRings = Math.min(level, 5); // 1 à 5 anneaux selon le niveau
         const ringRange = 3; // 3 cases de distance
         const ringDamage = 15;
+        const ringHitRadius = 0.5; // Rayon de collision de la boule (0.5 case = taille du sprite)
 
         // Pour chaque anneau
         for (let i = 0; i < numRings; i++) {
@@ -1929,11 +1934,13 @@ class Game {
 
             // Vérifier la collision avec chaque ennemi
             for (const enemy of this.enemies) {
-                // Calculer la distance entre l'anneau et l'ennemi
-                const distance = Math.hypot(enemy.x - ringX, enemy.y - ringY);
+                // Calculer la distance entre le centre de l'anneau et le centre de l'ennemi
+                const enemyCenterX = enemy.x + 0.5;
+                const enemyCenterY = enemy.y + 0.5;
+                const distance = Math.hypot(enemyCenterX - ringX, enemyCenterY - ringY);
 
-                // Si l'anneau touche l'ennemi (distance < 1 case)
-                if (distance < 1) {
+                // Si la boule touche l'ennemi (collision précise basée sur les sprites)
+                if (distance < ringHitRadius + 0.5) { // 0.5 = demi-taille de l'ennemi
                     // Vérifier si l'ennemi n'a pas déjà été touché pendant cette activation
                     const enemyKey = `${enemy.x}_${enemy.y}_${i}`;
                     if (!this.player.perkEffects.ringsHitEnemies.has(enemyKey)) {
