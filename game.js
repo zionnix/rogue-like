@@ -1714,34 +1714,34 @@ class Game {
         
         // Zone 1 - Mélée
         const melee1 = new Image();
-        melee1.src = './pixel_art/ennemi/zone 1/green_knif_men.png';
+        melee1.src = './pixel_art/ennemi/zone1/green_knif_men.png';
         this.enemySprites[1].melee.push(melee1);
 
         const melee2 = new Image();
-        melee2.src = './pixel_art/ennemi/zone 1/human_mad.png';
+        melee2.src = './pixel_art/ennemi/zone1/human_mad.png';
         this.enemySprites[1].melee.push(melee2);
 
         // Zone 1 - Arché (ranged)
         const ranged1 = new Image();
-        ranged1.src = './pixel_art/ennemi/zone 1/witch.png';
+        ranged1.src = './pixel_art/ennemi/zone1/witch.png';
         this.enemySprites[1].ranged.push(ranged1);
 
         const ranged2 = new Image();
-        ranged2.src = './pixel_art/ennemi/zone 1/gobelin_witch.png';
+        ranged2.src = './pixel_art/ennemi/zone1/gobelin_witch.png';
         this.enemySprites[1].ranged.push(ranged2);
 
         const ranged3 = new Image();
-        ranged3.src = './pixel_art/ennemi/zone 1/gun_gobelin.png';
+        ranged3.src = './pixel_art/ennemi/zone1/gun_gobelin.png';
         this.enemySprites[1].ranged.push(ranged3);
 
         // Zone 1 - Tank
         const tank1 = new Image();
-        tank1.src = './pixel_art/ennemi/zone 1/tank_monster.png';
+        tank1.src = './pixel_art/ennemi/zone1/tank_monster.png';
         this.enemySprites[1].tank.push(tank1);
 
         // Zone 1 - Small (rapide)
         const small1 = new Image();
-        small1.src = './pixel_art/ennemi/zone 1/crazy_gobelin.png';
+        small1.src = './pixel_art/ennemi/zone1/crazy_gobelin.png';
         this.enemySprites[1].small.push(small1);
 
         // Charger les sprites de décors
