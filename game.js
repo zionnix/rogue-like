@@ -836,27 +836,20 @@ class ProjectileAnimation extends Animation {
     }
 
     renderFireball(ctx, x, y, cellSize) {
-        const progress = this.elapsed / this.duration;
         const size = cellSize * 0.5;
 
         // Effet de pulsation plus intense
         const pulse = 1 + Math.sin(this.elapsed * 15) * 0.3;
 
-        // Traînée de feu
-        for (let i = 0; i < 5; i++) {
-            const trailProgress = progress - i * 0.05;
-            if (trailProgress > 0) {
-                const trailX = this.startX + (this.endX - this.startX) * trailProgress;
-                const trailY = this.startY + (this.endY - this.startY) * trailProgress;
-                const trailScreenX = (trailX - game.camera.x) * cellSize + cellSize / 2;
-                const trailScreenY = (trailY - game.camera.y) * cellSize + cellSize / 2;
+        // Traînée de feu (simplifiée sans référence camera)
+        for (let i = 1; i < 5; i++) {
+            const trailAlpha = 0.3 * (1 - i * 0.2);
+            const trailSize = size * 0.4 * (1 - i * 0.15);
 
-                const alpha = 0.3 * (1 - i * 0.2);
-                ctx.fillStyle = `rgba(255, 107, 0, ${alpha})`;
-                ctx.beginPath();
-                ctx.arc(trailScreenX, trailScreenY, size * 0.4, 0, Math.PI * 2);
-                ctx.fill();
-            }
+            ctx.fillStyle = `rgba(255, 107, 0, ${trailAlpha})`;
+            ctx.beginPath();
+            ctx.arc(x, y, trailSize, 0, Math.PI * 2);
+            ctx.fill();
         }
 
         // Aura extérieure (orange/rouge)
