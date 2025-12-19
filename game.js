@@ -530,8 +530,9 @@ class Player extends Entity {
     }
 
     fireAutomaticFireball() {
-        // Trouver l'ennemi le plus proche
-        const nearestEnemy = game.findNearestEnemy(this.x, this.y);
+        // Trouver l'ennemi le plus proche dans la portée de l'archer
+        const archerRange = CONFIG.CLASSES.archer.range;
+        const nearestEnemy = game.findNearestEnemy(this.x, this.y, archerRange);
 
         if (nearestEnemy) {
             // Créer une animation de fireball
@@ -1590,8 +1591,8 @@ class Game {
                     }
 
                     // Appliquer le knockback si le perk est actif
-                    if (this.player.perkEffects.knockback && !killed) {
-                        this.applyKnockback(target, this.player.perkEffects.knockback);
+                    if (this.player.perkEffects.knockbackDistance > 0 && !killed) {
+                        this.applyKnockback(target, this.player.perkEffects.knockbackDistance);
                     }
 
                     if (killed) {
@@ -1717,13 +1718,13 @@ class Game {
         }
     }
 
-    findNearestEnemy(x, y) {
+    findNearestEnemy(x, y, maxRange = Infinity) {
         let nearestEnemy = null;
         let minDistance = Infinity;
 
         for (const enemy of this.enemies) {
             const distance = Math.hypot(enemy.x - x, enemy.y - y);
-            if (distance < minDistance) {
+            if (distance < minDistance && distance <= maxRange) {
                 minDistance = distance;
                 nearestEnemy = enemy;
             }
