@@ -133,6 +133,14 @@ const CONFIG = {
             rarity: 'EPIC',
             maxLevel: 8
         },
+        MAGIC_RINGS: {
+            id: 'magic_rings',
+            name: 'Anneaux Magiques',
+            description: '1-5 anneaux (15dmg), niv.6 = permanent',
+            icon: '🔮',
+            rarity: 'EPIC',
+            maxLevel: 6
+        },
 
         // LEGENDARY (5%)
         SECOND_LIFE: {
@@ -354,6 +362,14 @@ class Player extends Entity {
             hasSecondLife: false,
             secondLifeUsed: false,
 
+            // Anneaux magiques
+            ringsActive: false,
+            ringsTimer: 0,
+            ringsCooldown: 0,
+            ringsRotation: 0,
+            ringsPermanent: false,
+            ringsHitEnemies: new Set(), // Ennemis déjà touchés pendant cette activation
+
             // Bonus de stats
             attackSpeedBonus: 0,
             damageBonus: 0
@@ -507,6 +523,44 @@ class Player extends Entity {
             // Tirer une fireball sur l'ennemi le plus proche
             this.fireAutomaticFireball();
             this.perkEffects.fireballCooldown = 5; // 5 secondes entre chaque fireball
+        }
+
+        // Anneaux magiques
+        if (this.perkLevels.magic_rings > 0) {
+            const level = this.perkLevels.magic_rings;
+            const isPermanent = level >= 6;
+
+            // Gestion du cooldown et activation
+            if (isPermanent) {
+                // Niveau 6: anneaux permanents
+                this.perkEffects.ringsActive = true;
+                this.perkEffects.ringsPermanent = true;
+            } else {
+                // Niveaux 1-5: 3 secondes actif, 15 secondes de cooldown
+                if (this.perkEffects.ringsActive) {
+                    this.perkEffects.ringsTimer -= deltaTime;
+                    if (this.perkEffects.ringsTimer <= 0) {
+                        this.perkEffects.ringsActive = false;
+                        this.perkEffects.ringsCooldown = 15;
+                        this.perkEffects.ringsHitEnemies.clear();
+                    }
+                } else if (this.perkEffects.ringsCooldown > 0) {
+                    this.perkEffects.ringsCooldown -= deltaTime;
+                } else {
+                    // Activer les anneaux
+                    this.perkEffects.ringsActive = true;
+                    this.perkEffects.ringsTimer = 3;
+                    this.perkEffects.ringsHitEnemies.clear();
+                }
+            }
+
+            // Rotation des anneaux (tour complet en 5 secondes)
+            if (this.perkEffects.ringsActive) {
+                this.perkEffects.ringsRotation += (deltaTime / 5) * Math.PI * 2;
+                if (this.perkEffects.ringsRotation >= Math.PI * 2) {
+                    this.perkEffects.ringsRotation -= Math.PI * 2;
+                }
+            }
         }
 
         // Effets de status (brûlure, etc.)
@@ -1856,6 +1910,57 @@ class Game {
         }
     }
 
+    // Vérifier les collisions des anneaux magiques avec les ennemis
+    updateMagicRingsCollision() {
+        if (!this.player.perkEffects.ringsActive) return;
+
+        const level = this.player.perkLevels.magic_rings;
+        if (level <= 0) return;
+
+        const numRings = Math.min(level, 5); // 1 à 5 anneaux selon le niveau
+        const ringRange = 3; // 3 cases de distance
+        const ringDamage = 15;
+
+        // Pour chaque anneau
+        for (let i = 0; i < numRings; i++) {
+            const angle = this.player.perkEffects.ringsRotation + (i * Math.PI * 2 / numRings);
+            const ringX = this.player.x + Math.cos(angle) * ringRange;
+            const ringY = this.player.y + Math.sin(angle) * ringRange;
+
+            // Vérifier la collision avec chaque ennemi
+            for (const enemy of this.enemies) {
+                // Calculer la distance entre l'anneau et l'ennemi
+                const distance = Math.hypot(enemy.x - ringX, enemy.y - ringY);
+
+                // Si l'anneau touche l'ennemi (distance < 1 case)
+                if (distance < 1) {
+                    // Vérifier si l'ennemi n'a pas déjà été touché pendant cette activation
+                    const enemyKey = `${enemy.x}_${enemy.y}_${i}`;
+                    if (!this.player.perkEffects.ringsHitEnemies.has(enemyKey)) {
+                        this.player.perkEffects.ringsHitEnemies.add(enemyKey);
+
+                        // Infliger les dégâts
+                        const killed = enemy.takeDamage(ringDamage);
+                        this.addFloatingText(enemy.x, enemy.y, `-${ringDamage} 🔮`, '#9b59b6');
+
+                        if (killed) {
+                            this.enemies = this.enemies.filter(e => e !== enemy);
+                            this.player.gainXP(enemy.xpValue);
+                            this.addFloatingText(this.player.x, this.player.y, `+${enemy.xpValue} XP`, '#ffd93d');
+                        }
+
+                        // Pour les anneaux permanents, réinitialiser après un court délai
+                        if (this.player.perkEffects.ringsPermanent) {
+                            setTimeout(() => {
+                                this.player.perkEffects.ringsHitEnemies.delete(enemyKey);
+                            }, 500); // 0.5 seconde avant de pouvoir retoucher le même ennemi
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     updateEnemies(deltaTime) {
         for (const enemy of this.enemies) {
             enemy.update(deltaTime);
@@ -2193,7 +2298,8 @@ class Game {
             'knockback': '👊',
             'regeneration': '💚',
             'fireball': '🔥',
-            'second_life': '💛'
+            'second_life': '💛',
+            'magic_rings': '🔮'
         };
 
         card.innerHTML = `
@@ -2383,6 +2489,7 @@ class Game {
         // Mise à jour
         this.player.update(deltaTime);
         this.player.updatePerks(deltaTime); // Mise à jour des perks
+        this.updateMagicRingsCollision(); // Collision des anneaux magiques
         this.updateEnemies(deltaTime);
 
         // Mettre à jour les soigneurs
@@ -2731,6 +2838,87 @@ class Game {
                 Math.PI * 2
             );
             ctx.stroke();
+        }
+
+        // Dessiner les anneaux magiques
+        if (this.player.perkEffects.ringsActive && this.player.perkLevels.magic_rings > 0) {
+            const level = this.player.perkLevels.magic_rings;
+            const numRings = Math.min(level, 5);
+            const ringRange = 3 * CONFIG.CELL_SIZE; // 3 cases de distance
+            const ringSize = CONFIG.CELL_SIZE * 0.4;
+            const playerCenterX = px + CONFIG.CELL_SIZE / 2;
+            const playerCenterY = py + CONFIG.CELL_SIZE / 2;
+
+            // Effet de lueur mauve autour du joueur
+            const glowGradient = ctx.createRadialGradient(
+                playerCenterX, playerCenterY, ringRange * 0.8,
+                playerCenterX, playerCenterY, ringRange * 1.2
+            );
+            glowGradient.addColorStop(0, 'rgba(155, 89, 182, 0)');
+            glowGradient.addColorStop(0.5, 'rgba(155, 89, 182, 0.1)');
+            glowGradient.addColorStop(1, 'rgba(155, 89, 182, 0)');
+            ctx.fillStyle = glowGradient;
+            ctx.beginPath();
+            ctx.arc(playerCenterX, playerCenterY, ringRange * 1.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Dessiner chaque anneau
+            for (let i = 0; i < numRings; i++) {
+                const angle = this.player.perkEffects.ringsRotation + (i * Math.PI * 2 / numRings);
+                const ringX = playerCenterX + Math.cos(angle) * ringRange;
+                const ringY = playerCenterY + Math.sin(angle) * ringRange;
+
+                // Traînée de l'anneau
+                const trailLength = 5;
+                for (let t = 0; t < trailLength; t++) {
+                    const trailAngle = angle - (t * 0.1);
+                    const trailX = playerCenterX + Math.cos(trailAngle) * ringRange;
+                    const trailY = playerCenterY + Math.sin(trailAngle) * ringRange;
+                    const trailAlpha = 0.3 * (1 - t / trailLength);
+
+                    ctx.fillStyle = `rgba(155, 89, 182, ${trailAlpha})`;
+                    ctx.beginPath();
+                    ctx.arc(trailX, trailY, ringSize * (1 - t * 0.1), 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Anneau principal avec gradient
+                const ringGradient = ctx.createRadialGradient(
+                    ringX, ringY, 0,
+                    ringX, ringY, ringSize
+                );
+                ringGradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+                ringGradient.addColorStop(0.3, 'rgba(200, 150, 255, 0.8)');
+                ringGradient.addColorStop(0.7, 'rgba(155, 89, 182, 0.6)');
+                ringGradient.addColorStop(1, 'rgba(100, 50, 150, 0.3)');
+
+                ctx.fillStyle = ringGradient;
+                ctx.beginPath();
+                ctx.arc(ringX, ringY, ringSize, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Contour lumineux
+                ctx.strokeStyle = 'rgba(200, 150, 255, 0.8)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(ringX, ringY, ringSize, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Petit brillant au centre
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.beginPath();
+                ctx.arc(ringX - ringSize * 0.2, ringY - ringSize * 0.2, ringSize * 0.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Cercle de portée des anneaux (optionnel, subtil)
+            ctx.strokeStyle = 'rgba(155, 89, 182, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.arc(playerCenterX, playerCenterY, ringRange, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
         }
 
         // Indicateur de portée
