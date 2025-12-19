@@ -1361,3 +1361,169 @@ button:active {
     display: none;
   }
 }
+
+/* ===== ÉCRAN ANIMATION SECONDE VIE ===== */
+#second-life-screen {
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 1000;
+}
+
+.second-life-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 400px;
+  height: 500px;
+}
+
+.second-life-circle {
+  position: absolute;
+  bottom: 50px;
+  width: 200px;
+  height: 60px;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.3) 50%, transparent 70%);
+  border-radius: 50%;
+  animation: circleGlow 1.5s ease-in-out infinite;
+}
+
+@keyframes circleGlow {
+  0%, 100% { 
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+.second-life-hero {
+  position: relative;
+  z-index: 2;
+  animation: heroRevive 2s ease-in-out forwards;
+}
+
+.second-life-hero img {
+  width: 150px;
+  height: 150px;
+  image-rendering: pixelated;
+  filter: brightness(0) invert(1);
+  animation: heroColorReturn 2s ease-in-out 1.5s forwards;
+}
+
+@keyframes heroRevive {
+  0% {
+    opacity: 0.3;
+    transform: translateY(20px);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heroColorReturn {
+  0% {
+    filter: brightness(0) invert(1);
+  }
+  100% {
+    filter: brightness(1) invert(0) drop-shadow(0 0 20px rgba(243, 156, 18, 0.8));
+  }
+}
+
+.second-life-heart {
+  position: absolute;
+  top: -50px;
+  font-size: 80px;
+  z-index: 3;
+  animation: heartDrop 1.5s ease-in forwards;
+  filter: drop-shadow(0 0 30px rgba(243, 156, 18, 0.8));
+}
+
+@keyframes heartDrop {
+  0% {
+    top: -100px;
+    opacity: 0;
+    transform: scale(1.5);
+  }
+  50% {
+    top: 100px;
+    opacity: 1;
+    transform: scale(1);
+  }
+  70% {
+    top: 80px;
+    transform: scale(1.2);
+  }
+  100% {
+    top: 100px;
+    opacity: 0;
+    transform: scale(0.5);
+  }
+}
+
+.second-life-text {
+  position: absolute;
+  bottom: -20px;
+  font-size: 1.5rem;
+  color: #f39c12;
+  text-shadow: 0 0 20px rgba(243, 156, 18, 0.8), 0 0 40px rgba(243, 156, 18, 0.5);
+  opacity: 0;
+  animation: textReveal 1s ease-out 1s forwards;
+}
+
+@keyframes textReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Indicateur seconde vie utilisée dans le HUD */
+.second-life-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.3rem 0.6rem;
+  background: rgba(243, 156, 18, 0.2);
+  border: 2px solid #f39c12;
+  border-radius: 4px;
+  animation: indicatorPulse 2s infinite;
+}
+
+.second-life-used-icon {
+  font-size: 1rem;
+  animation: iconBounce 1s infinite;
+}
+
+@keyframes iconBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.second-life-used-text {
+  font-size: 0.5rem;
+  color: #f39c12;
+}
+
+@keyframes indicatorPulse {
+  0%, 100% { 
+    box-shadow: 0 0 5px rgba(243, 156, 18, 0.3);
+  }
+  50% { 
+    box-shadow: 0 0 15px rgba(243, 156, 18, 0.6);
+  }
+}

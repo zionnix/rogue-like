@@ -800,9 +800,9 @@ class Player extends Entity {
         if (this.health <= 0 && this.perkEffects.hasSecondLife && !this.perkEffects.secondLifeUsed) {
             this.perkEffects.secondLifeUsed = true;
             this.health = Math.floor(this.maxHealth * 0.5);
-            game.addLog('💛 SECONDE VIE ACTIVÉE!', 'heal');
-            game.addFloatingText(this.x, this.y, 'SECONDE VIE!', '#f39c12');
-            game.createReviveEffect(this.x, this.y);
+            
+            // Lancer l'animation de seconde vie
+            game.playSecondLifeAnimation();
             return false;
         }
 
@@ -2173,6 +2173,46 @@ class Game {
                 offsetY: 0
             });
         }
+    }
+
+    // Animation de seconde vie
+    playSecondLifeAnimation() {
+        // Mettre le jeu en pause
+        this.state = 'second_life_animation';
+
+        // Configurer l'image du héros
+        const heroImageMap = {
+            archer: './pixel_art/heros_talk/archer.png',
+            knight: './pixel_art/heros_talk/knight.png',
+            mage: './pixel_art/heros_talk/magic men.png',
+            tank: './pixel_art/heros_talk/tank.png'
+        };
+        document.getElementById('second-life-hero-image').src = heroImageMap[this.player.classType];
+
+        // Afficher l'écran d'animation
+        this.showScreen('second-life-screen');
+
+        // Après l'animation (3.5 secondes), revenir au jeu
+        setTimeout(() => {
+            this.finishSecondLifeAnimation();
+        }, 3500);
+    }
+
+    // Fin de l'animation de seconde vie
+    finishSecondLifeAnimation() {
+        this.state = 'playing';
+        this.showScreen('game-screen');
+
+        // Afficher l'indicateur de seconde vie utilisée
+        document.getElementById('second-life-indicator').style.display = 'flex';
+
+        // Logs et effets visuels dans le jeu
+        this.addLog('💛 SECONDE VIE ACTIVÉE!', 'heal');
+        this.addFloatingText(this.player.x, this.player.y, 'SECONDE VIE!', '#f39c12');
+        this.createReviveEffect(this.player.x, this.player.y);
+
+        // Mettre à jour le HUD
+        this.updateHUD();
     }
 
     // Vérifier les collisions des anneaux magiques avec les ennemis
