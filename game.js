@@ -302,14 +302,14 @@ class Enemy extends Entity {
     constructor(x, y, level, zone, isBoss = false, enemyType = null) {
         const baseHealth = isBoss ? 200 : 50;
         const baseDamage = isBoss ? 30 : 10;
-        
+
         // Calcul du multiplicateur en fonction du niveau
         const levelInZone = ((level - 1) % CONFIG.LEVELS_PER_ZONE) + 1;
         const multiplier = 1 + (levelInZone - 1) * 0.1;
-        
+
         // Type d'ennemi (passé en paramètre ou melee par défaut)
         const combatType = enemyType || 'melee';
-        
+
         // Ajuster la vie selon le type
         let healthMultiplier = 1;
         if (combatType === 'tank') {
@@ -317,15 +317,15 @@ class Enemy extends Entity {
         } else if (combatType === 'small') {
             healthMultiplier = 0.5; // 2x moins de vie
         }
-        
+
         const health = Math.floor(baseHealth * multiplier * healthMultiplier);
         const damage = Math.floor(baseDamage * multiplier);
-        
+
         super(x, y, health, damage, 1);
-        
+
         this.isBoss = isBoss;
         this.zone = zone;
-        
+
         // XP selon le type d'ennemi
         if (isBoss) {
             this.xpValue = 'level'; // Spécial: donne un niveau complet
@@ -336,21 +336,51 @@ class Enemy extends Entity {
         } else {
             this.xpValue = 20; // melee et ranged
         }
-        
+
         // Type d'ennemi
         this.combatType = combatType;
         this.range = this.combatType === 'ranged' ? 4 : 1;
-        
+
         // IA et mouvement
         this.moveTimer = 0;
         // Les petits monstres bougent 4x plus vite (4 cases/seconde)
         this.moveInterval = this.combatType === 'small' ? 0.25 : 1;
         this.isAggro = false;  // Est-ce que l'ennemi poursuit le joueur?
         this.currentRoom = null;
-        
+
         // Visuel
         this.visualType = Math.floor(Math.random() * 6);
         this.spriteIndex = 0; // Sera défini lors du spawn
+    }
+}
+
+class Healer {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.hasHealed = false; // Ne peut soigner qu'une fois par niveau
+        this.animationTimer = 0; // Pour animation de flottement
+    }
+
+    // Soigne le joueur entre 30% et 100% de sa vie manquante
+    heal(player) {
+        if (this.hasHealed) return 0;
+
+        const missingHealth = player.maxHealth - player.health;
+        if (missingHealth <= 0) return 0; // Déjà pleine vie
+
+        // Entre 30% et 100% de la vie manquante
+        const healPercent = 0.3 + Math.random() * 0.7;
+        const healAmount = Math.floor(missingHealth * healPercent);
+
+        player.health = Math.min(player.maxHealth, player.health + healAmount);
+        this.hasHealed = true;
+
+        return healAmount;
+    }
+
+    update(deltaTime) {
+        this.animationTimer += deltaTime;
     }
 }
 
@@ -631,6 +661,8 @@ class Game {
         this.dungeon = null;
         this.player = null;
         this.enemies = [];
+        this.healers = []; // PNJ soigneurs
+        this.healingRooms = []; // Salles de soins
         this.exit = null;
         
         this.keys = {};
@@ -650,13 +682,15 @@ class Game {
             archer: new Image(),
             knight: new Image(),
             mage: new Image(),
-            tank: new Image()
+            tank: new Image(),
+            healer: new Image()
         };
-        
+
         this.sprites.archer.src = './pixel_art/hero/archer.png';
         this.sprites.knight.src = './pixel_art/hero/knight.png';
         this.sprites.mage.src = './pixel_art/hero/magic men.png';
         this.sprites.tank.src = './pixel_art/hero/tank.png';
+        this.sprites.healer.src = './pixel_art/helping/healer.png';
         
         // Charger les sprites des ennemis par zone
         this.enemySprites = {
@@ -866,8 +900,46 @@ class Game {
         const generator = new DungeonGenerator(CONFIG.GRID_SIZE);
         this.dungeon = generator;
         this.dungeon.grid = generator.generate();
-        
+
         this.exit = this.dungeon.findExitPoint();
+
+        // Générer 0 à 2 salles de soins aléatoirement (sauf niveaux boss)
+        this.generateHealingRooms();
+    }
+
+    generateHealingRooms() {
+        this.healingRooms = [];
+        this.healers = [];
+
+        const levelInZone = ((this.currentLevel - 1) % CONFIG.LEVELS_PER_ZONE) + 1;
+        const isBossLevel = levelInZone === CONFIG.LEVELS_PER_ZONE;
+
+        // Pas de salles de soins sur les niveaux boss
+        if (isBossLevel) return;
+
+        // 0, 1 ou 2 salles de soins aléatoirement
+        const numHealingRooms = Math.floor(Math.random() * 3); // 0, 1 ou 2
+
+        if (numHealingRooms === 0) return;
+
+        // Sélectionner des salles aléatoires (pas la première ni la dernière)
+        const availableRooms = this.dungeon.rooms.slice(1, -1);
+
+        if (availableRooms.length < numHealingRooms) return;
+
+        // Mélanger et prendre les N premières
+        const shuffled = [...availableRooms].sort(() => Math.random() - 0.5);
+        const selectedRooms = shuffled.slice(0, numHealingRooms);
+
+        for (const room of selectedRooms) {
+            this.healingRooms.push(room);
+
+            // Placer un soigneur au centre de la salle
+            const healerX = Math.floor(room.x + room.width / 2);
+            const healerY = Math.floor(room.y + room.height / 2);
+            const healer = new Healer(healerX, healerY);
+            this.healers.push(healer);
+        }
     }
     
     // Calculer les probabilités de spawn en fonction du niveau
@@ -936,13 +1008,22 @@ class Game {
             const numEnemies = Math.floor(baseEnemies + (maxEnemies - baseEnemies) * progress);
             
             for (let i = 0; i < numEnemies; i++) {
-                const room = this.dungeon.rooms[
-                    Math.floor(Math.random() * this.dungeon.rooms.length)
-                ];
-                
+                // Choisir une salle aléatoire qui n'est PAS une salle de soins
+                let room;
+                let attempts = 0;
+                do {
+                    room = this.dungeon.rooms[
+                        Math.floor(Math.random() * this.dungeon.rooms.length)
+                    ];
+                    attempts++;
+                } while (this.healingRooms.includes(room) && attempts < 50);
+
+                // Si on n'a pas trouvé de salle valide après 50 tentatives, passer
+                if (this.healingRooms.includes(room)) continue;
+
                 const x = room.x + Math.floor(Math.random() * room.width);
                 const y = room.y + Math.floor(Math.random() * room.height);
-                
+
                 // Ne pas spawner trop près du joueur
                 const dist = Math.hypot(x - this.player.x, y - this.player.y);
                 if (dist > 5) {
@@ -1072,14 +1153,21 @@ class Game {
     }
     
     handlePlayerAttack(e) {
-        if (!this.player.canAttack()) return;
-        
         // Convertir position souris en position grille
         const worldX = this.camera.x + this.mousePos.x / CONFIG.CELL_SIZE;
         const worldY = this.camera.y + this.mousePos.y / CONFIG.CELL_SIZE;
-        
+
         const targetX = Math.floor(worldX);
         const targetY = Math.floor(worldY);
+
+        // Vérifier si on clique sur un soigneur
+        const clickedHealer = this.healers.find(h => h.x === targetX && h.y === targetY);
+        if (clickedHealer) {
+            this.handleHealerInteraction(clickedHealer);
+            return;
+        }
+
+        if (!this.player.canAttack()) return;
         
         // Vérifier la portée
         const distance = Math.hypot(targetX - this.player.x, targetY - this.player.y);
@@ -1164,7 +1252,48 @@ class Game {
             }
         }
     }
-    
+
+    handleHealerInteraction(healer) {
+        if (healer.hasHealed) {
+            this.addLog('💚 Ce soigneur vous a déjà aidé!', 'info');
+            return;
+        }
+
+        const healAmount = healer.heal(this.player);
+
+        if (healAmount > 0) {
+            // Afficher le soin au-dessus du joueur
+            this.addFloatingText(this.player.x, this.player.y, `+${healAmount} HP`, '#2ecc71');
+
+            // Créer une animation de particules de soin
+            this.createHealingEffect(this.player.x, this.player.y);
+
+            this.addLog(`💚 Le soigneur vous a restauré ${healAmount} points de vie!`, 'heal');
+            this.updateHUD();
+        } else {
+            this.addLog('💚 Vous êtes déjà en pleine santé!', 'info');
+        }
+    }
+
+    createHealingEffect(x, y) {
+        // Créer plusieurs particules de soin autour du joueur
+        for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * Math.PI * 2;
+            const offsetX = Math.cos(angle) * 0.5;
+            const offsetY = Math.sin(angle) * 0.5;
+
+            this.floatingTexts.push({
+                x: x + offsetX,
+                y: y + offsetY,
+                text: '✨',
+                color: '#2ecc71',
+                duration: 1.0,
+                elapsed: 0,
+                offsetY: 0
+            });
+        }
+    }
+
     updateEnemies(deltaTime) {
         for (const enemy of this.enemies) {
             enemy.update(deltaTime);
@@ -1522,13 +1651,19 @@ class Game {
     
     gameLoop(currentTime) {
         if (this.state !== 'playing') return;
-        
+
         const deltaTime = (currentTime - this.lastTime) / 1000;
         this.lastTime = currentTime;
-        
+
         // Mise à jour
         this.player.update(deltaTime);
         this.updateEnemies(deltaTime);
+
+        // Mettre à jour les soigneurs
+        for (const healer of this.healers) {
+            healer.update(deltaTime);
+        }
+
         this.updateFloatingTexts(deltaTime);
         this.updateHUD();
         
@@ -1598,13 +1733,26 @@ class Game {
                     gridY >= 0 && gridY < CONFIG.GRID_SIZE) {
                     
                     const cell = this.dungeon.grid[gridY][gridX];
-                    
+
+                    // Vérifier si on est dans une salle de soins
+                    let isHealingRoom = false;
+                    for (const room of this.healingRooms) {
+                        if (gridX >= room.x && gridX < room.x + room.width &&
+                            gridY >= room.y && gridY < room.y + room.height) {
+                            isHealingRoom = true;
+                            break;
+                        }
+                    }
+
                     if (cell === 1) {
                         ctx.fillStyle = zoneColors[0]; // Murs
+                    } else if (isHealingRoom) {
+                        // Sol vert clair pour les salles de soins
+                        ctx.fillStyle = '#3d5a3d';
                     } else {
-                        ctx.fillStyle = zoneColors[1]; // Sol
+                        ctx.fillStyle = zoneColors[1]; // Sol normal
                     }
-                    
+
                     ctx.fillRect(
                         x * CONFIG.CELL_SIZE,
                         y * CONFIG.CELL_SIZE,
@@ -1639,6 +1787,74 @@ class Game {
             ctx.fillText(exitUnlocked ? '★' : '🔒', exitX + CONFIG.CELL_SIZE / 2, exitY + CONFIG.CELL_SIZE / 2);
         }
         
+        // Dessiner les soigneurs
+        for (const healer of this.healers) {
+            const hx = (healer.x - this.camera.x) * CONFIG.CELL_SIZE;
+            const hy = (healer.y - this.camera.y) * CONFIG.CELL_SIZE;
+
+            if (hx >= 0 && hx < this.canvas.width &&
+                hy >= 0 && hy < this.canvas.height) {
+
+                // Animation de flottement
+                const floatOffset = Math.sin(healer.animationTimer * 2) * 4;
+
+                // Dessiner le sprite du soigneur
+                const sprite = this.sprites.healer;
+                const offsetSize = (CONFIG.CELL_SIZE - CONFIG.SPRITE_SIZE) / 2;
+
+                if (sprite && sprite.complete && sprite.naturalWidth > 0) {
+                    ctx.save();
+                    ctx.imageSmoothingEnabled = false;
+
+                    // Aura de soin si pas encore utilisé
+                    if (!healer.hasHealed) {
+                        const pulse = 0.8 + Math.sin(healer.animationTimer * 3) * 0.2;
+                        ctx.globalAlpha = 0.3 * pulse;
+                        ctx.fillStyle = '#2ecc71';
+                        ctx.beginPath();
+                        ctx.arc(
+                            hx + CONFIG.CELL_SIZE / 2,
+                            hy + CONFIG.CELL_SIZE / 2 + floatOffset,
+                            CONFIG.CELL_SIZE * 0.8,
+                            0,
+                            Math.PI * 2
+                        );
+                        ctx.fill();
+                        ctx.globalAlpha = 1;
+                    }
+
+                    // Dessiner le sprite
+                    ctx.drawImage(
+                        sprite,
+                        hx + offsetSize,
+                        hy + offsetSize + floatOffset,
+                        CONFIG.SPRITE_SIZE,
+                        CONFIG.SPRITE_SIZE
+                    );
+
+                    ctx.restore();
+
+                    // Indicateur visuel au-dessus
+                    if (!healer.hasHealed) {
+                        ctx.fillStyle = '#2ecc71';
+                        ctx.font = `${Math.floor(CONFIG.CELL_SIZE * 0.4)}px Arial`;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText('💚', hx + CONFIG.CELL_SIZE / 2, hy - 10 + floatOffset);
+                    } else {
+                        // Griser si déjà utilisé
+                        ctx.globalAlpha = 0.5;
+                        ctx.fillStyle = '#888';
+                        ctx.font = `${Math.floor(CONFIG.CELL_SIZE * 0.3)}px Arial`;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText('✓', hx + CONFIG.CELL_SIZE / 2, hy - 10 + floatOffset);
+                        ctx.globalAlpha = 1;
+                    }
+                }
+            }
+        }
+
         // Dessiner les ennemis
         for (const enemy of this.enemies) {
             const ex = (enemy.x - this.camera.x) * CONFIG.CELL_SIZE;
