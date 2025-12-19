@@ -616,6 +616,10 @@ class Player extends Entity {
             case 'knockback':
                 this.perkEffects.knockbackDistance = level;
                 break;
+
+            case 'second_life':
+                this.perkEffects.hasSecondLife = true;
+                break;
         }
     }
 
