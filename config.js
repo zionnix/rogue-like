@@ -8,7 +8,7 @@
  */
 
 // ===== CONFIGURATION GÉNÉRALE =====
-export const GAME_CONFIG = {
+const GAME_CONFIG = {
     // Taille de la grille du donjon
     GRID_SIZE: 50,              // Cases de large/haut
     
@@ -24,7 +24,7 @@ export const GAME_CONFIG = {
 };
 
 // ===== CONFIGURATION DES CLASSES =====
-export const CLASS_CONFIG = {
+const CLASS_CONFIG = {
     archer: {
         name: 'Archer',
         health: 80,             // Points de vie de départ
@@ -63,7 +63,7 @@ export const CLASS_CONFIG = {
 };
 
 // ===== CONFIGURATION DES ENNEMIS =====
-export const ENEMY_CONFIG = {
+const ENEMY_CONFIG = {
     // Stats de base
     BASE_HEALTH: 50,            // Vie de base d'un ennemi normal
     BASE_DAMAGE: 10,            // Dégâts de base
@@ -86,7 +86,7 @@ export const ENEMY_CONFIG = {
 };
 
 // ===== CONFIGURATION DE LA GÉNÉRATION DE DONJON =====
-export const DUNGEON_CONFIG = {
+const DUNGEON_CONFIG = {
     // Nombre de salles
     MIN_ROOMS: 8,               // Minimum de salles
     MAX_EXTRA_ROOMS: 5,         // Salles supplémentaires aléatoires
@@ -101,7 +101,7 @@ export const DUNGEON_CONFIG = {
 };
 
 // ===== CONFIGURATION DU SYSTÈME DE PROGRESSION =====
-export const PROGRESSION_CONFIG = {
+const PROGRESSION_CONFIG = {
     // XP
     INITIAL_XP_REQUIRED: 100,   // XP pour le niveau 2
     XP_MULTIPLIER: 1.5,         // Multiplicateur d'XP par niveau
@@ -132,7 +132,7 @@ export const PROGRESSION_CONFIG = {
 };
 
 // ===== CONFIGURATION DES ZONES =====
-export const ZONE_CONFIG = {
+const ZONE_CONFIG = {
     1: {
         name: 'Forêt Mystique',
         colors: ['#2d5016', '#4a7c2f', '#6b9d4a'],
@@ -161,7 +161,7 @@ export const ZONE_CONFIG = {
 };
 
 // ===== CONFIGURATION VISUELLE =====
-export const VISUAL_CONFIG = {
+const VISUAL_CONFIG = {
     // Couleurs de l'interface
     PRIMARY_COLOR: '#ff6b9d',
     SECONDARY_COLOR: '#4ecdc4',
@@ -177,7 +177,7 @@ export const VISUAL_CONFIG = {
 };
 
 // ===== MODE DEBUG =====
-export const DEBUG_CONFIG = {
+const DEBUG_CONFIG = {
     ENABLED: false,              // Activer le mode debug
     SHOW_GRID: false,           // Afficher la grille
     SHOW_HITBOXES: false,       // Afficher les hitboxes
@@ -187,7 +187,7 @@ export const DEBUG_CONFIG = {
 };
 
 // ===== CONFIGURATION AVANCÉE =====
-export const ADVANCED_CONFIG = {
+const ADVANCED_CONFIG = {
     // Performance
     TARGET_FPS: 60,
     
