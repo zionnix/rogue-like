@@ -4,9 +4,17 @@ const CONFIG = {
     CELL_SIZE: 48,
     SPRITE_SIZE: 80,  // Taille des sprites (personnages et ennemis)
     // Canvas et viewport seront calculés dynamiquement
-    
+
     TOTAL_LEVELS: 50,
     LEVELS_PER_ZONE: 10,
+
+    // Raretés des bonus
+    RARITY: {
+        COMMON: { name: 'Commun', color: '#2ecc71', chance: 0.50 },
+        RARE: { name: 'Rare', color: '#3498db', chance: 0.30 },
+        EPIC: { name: 'Épique', color: '#9b59b6', chance: 0.15 },
+        LEGENDARY: { name: 'Légendaire', color: '#f39c12', chance: 0.05 }
+    },
     
     // Classes de personnages
     CLASSES: {
@@ -51,6 +59,89 @@ const CONFIG = {
         3: { name: 'Terres de Lave', colors: ['#5c1010', '#ff4500', '#ff6347'] },
         4: { name: 'Profondeurs Aquatiques', colors: ['#0f3460', '#1e90ff', '#4169e1'] },
         5: { name: 'Cité Futuriste', colors: ['#1a1a2e', '#16c79a', '#0f3460'] }
+    },
+
+    // Définition des bonus
+    PERKS: {
+        // COMMUN (50%)
+        DOUBLE_SHOT: {
+            id: 'double_shot',
+            name: 'Tir Double',
+            description: 'Tire 2 projectiles au lieu d\'1',
+            rarity: 'COMMON',
+            classRestriction: ['archer', 'mage'],
+            maxLevel: 1
+        },
+        DOUBLE_STRIKE: {
+            id: 'double_strike',
+            name: 'Frappe Double',
+            description: 'Frappe 2 fois rapidement',
+            rarity: 'COMMON',
+            classRestriction: ['knight', 'tank'],
+            maxLevel: 1
+        },
+        ATTACK_SPEED: {
+            id: 'attack_speed',
+            name: 'Vitesse d\'Attaque',
+            description: '-10% temps d\'attaque par niveau',
+            rarity: 'COMMON',
+            maxLevel: 5
+        },
+        DAMAGE_BOOST: {
+            id: 'damage_boost',
+            name: 'Force',
+            description: '+5 dégâts par niveau',
+            rarity: 'COMMON',
+            maxLevel: 10
+        },
+
+        // RARE (30%)
+        SHIELD: {
+            id: 'shield',
+            name: 'Bouclier Magique',
+            description: 'Bouclier 3s+1s/niv, cooldown 10s',
+            rarity: 'RARE',
+            maxLevel: 10
+        },
+        CRITICAL: {
+            id: 'critical',
+            name: 'Coup Critique',
+            description: '15% à 100% de chance, 1.5x dégâts',
+            rarity: 'RARE',
+            maxLevel: 10
+        },
+        KNOCKBACK: {
+            id: 'knockback',
+            name: 'Repousser',
+            description: 'Repousse de 1 à 10 cases',
+            rarity: 'RARE',
+            maxLevel: 10
+        },
+        REGENERATION: {
+            id: 'regeneration',
+            name: 'Régénération',
+            description: 'Restaure 30% PV sur 3s',
+            rarity: 'RARE',
+            maxLevel: 5
+        },
+
+        // EPIC (15%)
+        FIREBALL: {
+            id: 'fireball',
+            name: 'Boules de Feu',
+            description: '2+1/niv boules, brûlure 5dmg/s 3s',
+            rarity: 'EPIC',
+            maxLevel: 8
+        },
+
+        // LEGENDARY (5%)
+        SECOND_LIFE: {
+            id: 'second_life',
+            name: 'Seconde Vie',
+            description: 'Revie avec 50% PV (unique)',
+            rarity: 'LEGENDARY',
+            maxLevel: 1
+        }
     }
 };
 
@@ -234,6 +325,41 @@ class Player extends Entity {
             speed: 0,
             range: 0
         };
+
+        // Système de perks/bonus
+        this.perks = {}; // { perkId: level }
+        this.perkEffects = {
+            // Bouclier
+            shieldActive: false,
+            shieldTimer: 0,
+            shieldCooldown: 0,
+            shieldDuration: 0,
+
+            // Coup critique
+            criticalChance: 0,
+
+            // Knockback
+            knockbackDistance: 0,
+
+            // Régénération
+            regenActive: false,
+            regenTimer: 0,
+            regenAmount: 0,
+
+            // Boules de feu
+            fireballCooldown: 0,
+
+            // Seconde vie
+            hasSecondLife: false,
+            secondLifeUsed: false,
+
+            // Bonus de stats
+            attackSpeedBonus: 0,
+            damageBonus: 0
+        };
+
+        // Effets de status
+        this.statusEffects = []; // { type, duration, elapsed, data }
     }
     
     gainXP(amount) {
@@ -255,46 +381,155 @@ class Player extends Entity {
     levelUp() {
         this.level++;
         this.xpToNext = Math.floor(this.xpToNext * 1.5);
-        
-        // Amélioration aléatoire
-        const upgrade = this.getRandomUpgrade();
-        this.applyUpgrade(upgrade);
-        
-        game.addLog(`Niveau ${this.level}! ${upgrade.name} amélioré!`, 'info');
+
+        // Afficher l'écran de choix de perk
+        game.showPerkChoice();
     }
-    
-    getRandomUpgrade() {
-        const upgrades = [
-            { type: 'damage', name: 'Dégâts', value: 5 },
-            { type: 'health', name: 'Vie Max', value: 20 },
-            { type: 'speed', name: 'Vitesse', value: -0.1 },
-            { type: 'range', name: 'Portée', value: 1 }
-        ];
-        
-        
-        return upgrades[Math.floor(Math.random() * upgrades.length)];
+
+    // Ajouter un perk
+    addPerk(perkId) {
+        if (!this.perks[perkId]) {
+            this.perks[perkId] = 0;
+        }
+
+        const perkConfig = CONFIG.PERKS[Object.keys(CONFIG.PERKS).find(k => CONFIG.PERKS[k].id === perkId)];
+        if (!perkConfig) return;
+
+        if (this.perks[perkId] < perkConfig.maxLevel) {
+            this.perks[perkId]++;
+            this.applyPerkEffect(perkId);
+            game.addLog(`✨ ${perkConfig.name} niveau ${this.perks[perkId]}!`, 'info');
+        }
     }
-    
-    applyUpgrade(upgrade) {
-        this.upgrades[upgrade.type]++;
-        
-        switch(upgrade.type) {
-            case 'damage':
-                this.damage += upgrade.value;
+
+    // Appliquer les effets d'un perk
+    applyPerkEffect(perkId) {
+        const level = this.perks[perkId];
+
+        switch(perkId) {
+            case 'damage_boost':
+                this.perkEffects.damageBonus = level * 5;
+                this.damage = CONFIG.CLASSES[this.classType].damage + this.perkEffects.damageBonus;
                 break;
-            case 'health':
-                this.maxHealth += upgrade.value;
-                this.health = Math.min(this.health + upgrade.value, this.maxHealth);
+
+            case 'attack_speed':
+                this.perkEffects.attackSpeedBonus = level * 0.1;
+                const baseSpeed = CONFIG.CLASSES[this.classType].attackSpeed;
+                this.speed = baseSpeed * (1 - this.perkEffects.attackSpeedBonus);
                 break;
-            case 'speed':
-                this.speed = Math.max(0.1, this.speed + upgrade.value);
+
+            case 'shield':
+                this.perkEffects.shieldDuration = 3 + level;
                 break;
-            case 'range':
-                if (this.range !== Infinity) {
-                    this.range += upgrade.value;
-                }
+
+            case 'critical':
+                // 15% au niveau 1, jusqu'à 100% au niveau 10
+                const minChance = 0.15;
+                const maxChance = 1.0;
+                this.perkEffects.criticalChance = minChance + (maxChance - minChance) * (level / 10);
+                break;
+
+            case 'knockback':
+                this.perkEffects.knockbackDistance = level;
                 break;
         }
+    }
+
+    // Obtenir les dégâts calculés (avec critique, etc.)
+    getCalculatedDamage() {
+        let finalDamage = this.damage;
+
+        // Appliquer le coup critique
+        if (this.perkEffects.criticalChance > 0) {
+            if (Math.random() < this.perkEffects.criticalChance) {
+                finalDamage *= 1.5;
+                return { damage: Math.floor(finalDamage), isCritical: true };
+            }
+        }
+
+        return { damage: Math.floor(finalDamage), isCritical: false };
+    }
+
+    // Mise à jour des effets de perks
+    updatePerks(deltaTime) {
+        // Bouclier
+        if (this.perks['shield']) {
+            // Cooldown
+            if (this.perkEffects.shieldCooldown > 0) {
+                this.perkEffects.shieldCooldown -= deltaTime;
+            } else if (!this.perkEffects.shieldActive) {
+                // Activer le bouclier automatiquement
+                this.perkEffects.shieldActive = true;
+                this.perkEffects.shieldTimer = this.perkEffects.shieldDuration;
+            }
+
+            // Durée du bouclier
+            if (this.perkEffects.shieldActive) {
+                this.perkEffects.shieldTimer -= deltaTime;
+                if (this.perkEffects.shieldTimer <= 0) {
+                    this.perkEffects.shieldActive = false;
+                    this.perkEffects.shieldCooldown = 10; // 10 secondes de cooldown
+                }
+            }
+        }
+
+        // Régénération
+        if (this.perkEffects.regenActive) {
+            this.perkEffects.regenTimer -= deltaTime;
+            const regenPerSecond = this.perkEffects.regenAmount / 3;
+            this.health = Math.min(this.maxHealth, this.health + regenPerSecond * deltaTime);
+
+            if (this.perkEffects.regenTimer <= 0) {
+                this.perkEffects.regenActive = false;
+            }
+        }
+
+        // Cooldown boules de feu
+        if (this.perkEffects.fireballCooldown > 0) {
+            this.perkEffects.fireballCooldown -= deltaTime;
+        }
+
+        // Effets de status (brûlure, etc.)
+        for (let i = this.statusEffects.length - 1; i >= 0; i--) {
+            const effect = this.statusEffects[i];
+            effect.elapsed += deltaTime;
+
+            if (effect.type === 'burn') {
+                // Appliquer les dégâts de brûlure
+                const damageInterval = 1.0; // 1 seconde
+                if (Math.floor(effect.elapsed / damageInterval) > Math.floor((effect.elapsed - deltaTime) / damageInterval)) {
+                    this.takeDamage(effect.data.damagePerSecond);
+                    game.addFloatingText(this.x, this.y, `-${effect.data.damagePerSecond}`, '#ff6b00');
+                }
+            }
+
+            if (effect.elapsed >= effect.duration) {
+                this.statusEffects.splice(i, 1);
+            }
+        }
+    }
+
+    // Prendre des dégâts (avec bouclier)
+    takeDamage(amount) {
+        // Si le bouclier est actif, bloquer les dégâts
+        if (this.perkEffects.shieldActive) {
+            game.addFloatingText(this.x, this.y, 'BLOQUÉ!', '#3498db');
+            return false;
+        }
+
+        this.health -= amount;
+
+        // Seconde vie
+        if (this.health <= 0 && this.perkEffects.hasSecondLife && !this.perkEffects.secondLifeUsed) {
+            this.perkEffects.secondLifeUsed = true;
+            this.health = Math.floor(this.maxHealth * 0.5);
+            game.addLog('💛 SECONDE VIE ACTIVÉE!', 'heal');
+            game.addFloatingText(this.x, this.y, 'SECONDE VIE!', '#f39c12');
+            game.createReviveEffect(this.x, this.y);
+            return false;
+        }
+
+        return this.health <= 0;
     }
 }
 
@@ -351,6 +586,40 @@ class Enemy extends Entity {
         // Visuel
         this.visualType = Math.floor(Math.random() * 6);
         this.spriteIndex = 0; // Sera défini lors du spawn
+
+        // Effets de status
+        this.statusEffects = []; // { type, duration, elapsed, data }
+    }
+
+    // Appliquer un effet de status (brûlure, etc.)
+    applyStatusEffect(type, duration, data) {
+        this.statusEffects.push({
+            type: type,
+            duration: duration,
+            elapsed: 0,
+            data: data
+        });
+    }
+
+    // Mise à jour des effets de status
+    updateStatusEffects(deltaTime) {
+        for (let i = this.statusEffects.length - 1; i >= 0; i--) {
+            const effect = this.statusEffects[i];
+            effect.elapsed += deltaTime;
+
+            if (effect.type === 'burn') {
+                // Appliquer les dégâts de brûlure toutes les secondes
+                const damageInterval = 1.0;
+                if (Math.floor(effect.elapsed / damageInterval) > Math.floor((effect.elapsed - deltaTime) / damageInterval)) {
+                    this.takeDamage(effect.data.damagePerSecond);
+                    game.addFloatingText(this.x, this.y, `-${effect.data.damagePerSecond} 🔥`, '#ff6b00');
+                }
+            }
+
+            if (effect.elapsed >= effect.duration) {
+                this.statusEffects.splice(i, 1);
+            }
+        }
     }
 }
 
@@ -1524,7 +1793,139 @@ class Game {
         });
         document.getElementById(screenId).classList.add('active');
     }
-    
+
+    // Afficher l'écran de sélection de perk
+    showPerkChoice() {
+        // Pause le jeu
+        this.state = 'perk-selection';
+
+        // Mettre à jour le niveau affiché
+        document.getElementById('new-level').textContent = this.player.level;
+
+        // Générer 3 perks aléatoires
+        const choices = this.generatePerkChoices(3);
+
+        // Afficher les choix
+        const container = document.getElementById('perk-choices');
+        container.innerHTML = '';
+
+        choices.forEach(perk => {
+            const card = this.createPerkCard(perk);
+            container.appendChild(card);
+        });
+
+        this.showScreen('perk-selection');
+    }
+
+    // Générer des choix de perks basés sur la rareté
+    generatePerkChoices(count) {
+        const availablePerks = [];
+
+        // Filtrer les perks disponibles
+        for (const key in CONFIG.PERKS) {
+            const perk = CONFIG.PERKS[key];
+
+            // Vérifier les restrictions de classe
+            if (perk.classRestriction && !perk.classRestriction.includes(this.player.classType)) {
+                continue;
+            }
+
+            // Vérifier si le perk n'est pas au niveau max
+            const currentLevel = this.player.perks[perk.id] || 0;
+            if (currentLevel >= perk.maxLevel) {
+                continue;
+            }
+
+            // Vérifier la seconde vie (unique)
+            if (perk.id === 'second_life' && this.player.perks[perk.id]) {
+                continue;
+            }
+
+            availablePerks.push(perk);
+        }
+
+        // Générer les choix en fonction de la rareté
+        const choices = [];
+        for (let i = 0; i < count && availablePerks.length > 0; i++) {
+            const perk = this.selectPerkByRarity(availablePerks);
+            choices.push(perk);
+
+            // Retirer le perk sélectionné des disponibles
+            const index = availablePerks.indexOf(perk);
+            availablePerks.splice(index, 1);
+        }
+
+        return choices;
+    }
+
+    // Sélectionner un perk en fonction de sa rareté
+    selectPerkByRarity(perks) {
+        const roll = Math.random();
+        let cumulativeChance = 0;
+
+        // Trier par rareté (Légendaire > Epic > Rare > Commun)
+        const rarityOrder = ['LEGENDARY', 'EPIC', 'RARE', 'COMMON'];
+
+        for (const rarity of rarityOrder) {
+            const rarityPerks = perks.filter(p => p.rarity === rarity);
+            if (rarityPerks.length === 0) continue;
+
+            cumulativeChance += CONFIG.RARITY[rarity].chance;
+
+            if (roll < cumulativeChance) {
+                return rarityPerks[Math.floor(Math.random() * rarityPerks.length)];
+            }
+        }
+
+        // Fallback: retourner un perk aléatoire
+        return perks[Math.floor(Math.random() * perks.length)];
+    }
+
+    // Créer une carte de perk
+    createPerkCard(perk) {
+        const card = document.createElement('div');
+        card.className = `perk-card rarity-${perk.rarity.toLowerCase()}`;
+
+        const currentLevel = this.player.perks[perk.id] || 0;
+        const nextLevel = currentLevel + 1;
+
+        const icons = {
+            'double_shot': '🏹🏹',
+            'double_strike': '⚔️⚔️',
+            'attack_speed': '⚡',
+            'damage_boost': '💪',
+            'shield': '🛡️',
+            'critical': '💥',
+            'knockback': '👊',
+            'regeneration': '💚',
+            'fireball': '🔥',
+            'second_life': '💛'
+        };
+
+        card.innerHTML = `
+            <div class="perk-icon">${icons[perk.id] || '✨'}</div>
+            <div class="perk-name">${perk.name}</div>
+            <div class="perk-rarity rarity-${perk.rarity.toLowerCase()}">${CONFIG.RARITY[perk.rarity].name}</div>
+            <div class="perk-description">${perk.description}</div>
+            <div class="perk-level">Niveau ${nextLevel}/${perk.maxLevel}</div>
+        `;
+
+        card.addEventListener('click', () => {
+            this.selectPerk(perk.id);
+        });
+
+        return card;
+    }
+
+    // Sélectionner un perk
+    selectPerk(perkId) {
+        this.player.addPerk(perkId);
+
+        // Reprendre le jeu
+        this.state = 'playing';
+        this.showScreen('game-screen');
+    }
+
     updateHUD() {
         const zone = Math.ceil(this.currentLevel / CONFIG.LEVELS_PER_ZONE);
         const zoneName = CONFIG.ZONES[zone].name;
