@@ -1,0 +1,649 @@
+// Variables
+$pixel-size: 4px;
+$game-bg: #0a0e1a;
+$primary: #ff6b9d;
+$secondary: #4ecdc4;
+$accent: #ffd93d;
+$danger: #ff4757;
+$success: #2ed573;
+
+// Zones thématiques
+$forest-primary: #2d5016;
+$forest-secondary: #4a7c2f;
+$cave-primary: #2c2c3e;
+$cave-secondary: #4a4a6a;
+$lava-primary: #5c1010;
+$lava-secondary: #ff4500;
+$water-primary: #0f3460;
+$water-secondary: #1e90ff;
+$future-primary: #1a1a2e;
+$future-secondary: #16c79a;
+
+// Reset & Base
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Press Start 2P', cursive;
+    background: $game-bg;
+    color: white;
+    overflow: hidden;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+}
+
+#game-container {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+}
+
+// Screens
+.screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    
+    &.active {
+        display: flex;
+        opacity: 1;
+    }
+}
+
+// Class Selection Screen
+#class-selection {
+    justify-content: center;
+    align-items: center;
+    background: 
+        radial-gradient(circle at 20% 80%, rgba(255, 107, 157, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(78, 205, 196, 0.1) 0%, transparent 50%),
+        linear-gradient(180deg, $game-bg 0%, lighten($game-bg, 5%) 100%);
+}
+
+.title-screen {
+    text-align: center;
+    animation: fadeInUp 1s ease;
+}
+
+.game-title {
+    font-size: 3rem;
+    color: $accent;
+    text-shadow: 
+        4px 4px 0 $primary,
+        8px 8px 0 rgba(0, 0, 0, 0.5);
+    margin-bottom: 1rem;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.subtitle {
+    font-size: 1rem;
+    color: $secondary;
+    margin-bottom: 3rem;
+}
+
+.class-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    max-width: 900px;
+}
+
+.class-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 4px solid $secondary;
+    padding: 2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    
+    &::before {
+        content: '';
+        position: absolute;
+        top: -4px;
+        left: -4px;
+        right: -4px;
+        bottom: -4px;
+        background: linear-gradient(45deg, $primary, $secondary, $accent);
+        z-index: -1;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    &:hover {
+        transform: translateY(-8px);
+        border-color: $accent;
+        background: rgba(255, 255, 255, 0.1);
+        
+        &::before {
+            opacity: 0.5;
+            animation: borderGlow 1.5s ease infinite;
+        }
+        
+        .class-icon {
+            transform: scale(1.2);
+        }
+    }
+    
+    h3 {
+        font-size: 1.2rem;
+        margin: 1rem 0;
+        color: $accent;
+    }
+}
+
+.class-stats {
+    font-size: 0.6rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.8);
+    
+    p {
+        margin: 0.5rem 0;
+    }
+}
+
+.class-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    transition: transform 0.3s ease;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+    position: relative;
+}
+
+// Pixel art icons avec CSS
+.archer-icon {
+    background: 
+        linear-gradient(90deg, transparent 28px, #2ecc71 28px, #2ecc71 36px, transparent 36px),
+        linear-gradient(90deg, transparent 24px, #27ae60 24px, #27ae60 28px, transparent 28px),
+        linear-gradient(90deg, transparent 36px, #27ae60 36px, #27ae60 40px, transparent 40px),
+        linear-gradient(90deg, transparent 20px, #8b4513 20px, #8b4513 24px, transparent 24px),
+        linear-gradient(90deg, transparent 40px, #8b4513 40px, #8b4513 44px, transparent 44px);
+    background-size: 64px 8px;
+    background-position: 0 16px, 0 20px, 0 20px, 0 24px, 0 24px;
+    background-repeat: no-repeat;
+    
+    &::before {
+        content: '';
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        background: #2ecc71;
+        top: 32px;
+        left: 24px;
+        box-shadow: 
+            0 -8px 0 #2ecc71,
+            0 8px 0 #2ecc71;
+    }
+}
+
+.knight-icon {
+    background: 
+        linear-gradient(90deg, transparent 28px, #3498db 28px, #3498db 36px, transparent 36px),
+        linear-gradient(90deg, transparent 24px, #3498db 24px, #3498db 40px, transparent 40px),
+        linear-gradient(90deg, transparent 20px, #2980b9 20px, #2980b9 44px, transparent 44px);
+    background-size: 64px 8px;
+    background-position: 0 8px, 0 16px, 0 24px;
+    background-repeat: no-repeat;
+    
+    &::before {
+        content: '';
+        position: absolute;
+        width: 24px;
+        height: 24px;
+        background: #e74c3c;
+        top: 32px;
+        left: 20px;
+        box-shadow: 
+            8px 0 0 #c0392b,
+            -8px 0 0 #c0392b;
+    }
+    
+    &::after {
+        content: '';
+        position: absolute;
+        width: 8px;
+        height: 16px;
+        background: #95a5a6;
+        top: 48px;
+        left: 28px;
+    }
+}
+
+.tank-icon {
+    background: 
+        linear-gradient(90deg, transparent 20px, #e67e22 20px, #e67e22 44px, transparent 44px),
+        linear-gradient(90deg, transparent 16px, #e67e22 16px, #e67e22 48px, transparent 48px);
+    background-size: 64px 16px;
+    background-position: 0 16px, 0 32px;
+    background-repeat: no-repeat;
+    
+    &::before {
+        content: '';
+        position: absolute;
+        width: 40px;
+        height: 8px;
+        background: #95a5a6;
+        top: 24px;
+        left: 12px;
+        box-shadow: 
+            0 8px 0 #95a5a6,
+            0 16px 0 #7f8c8d;
+    }
+    
+    &::after {
+        content: '';
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        background: #d35400;
+        top: 8px;
+        left: 24px;
+    }
+}
+
+.mage-icon {
+    background: 
+        linear-gradient(90deg, transparent 28px, #9b59b6 28px, #9b59b6 36px, transparent 36px),
+        linear-gradient(90deg, transparent 24px, #9b59b6 24px, #9b59b6 40px, transparent 40px);
+    background-size: 64px 8px;
+    background-position: 0 16px, 0 24px;
+    background-repeat: no-repeat;
+    
+    &::before {
+        content: '✨';
+        position: absolute;
+        font-size: 24px;
+        top: 32px;
+        left: 20px;
+        animation: float 2s ease-in-out infinite;
+    }
+    
+    &::after {
+        content: '';
+        position: absolute;
+        width: 8px;
+        height: 32px;
+        background: #8b4513;
+        top: 48px;
+        left: 28px;
+    }
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-4px);
+    }
+}
+
+// Game Screen
+#game-screen {
+    flex-direction: column;
+}
+
+#hud {
+    display: flex;
+    justify-content: space-between;
+    padding: 1rem;
+    background: rgba(10, 14, 26, 0.95);
+    border-bottom: 4px solid $secondary;
+    backdrop-filter: blur(10px);
+    position: relative;
+    z-index: 100;
+    
+    .hud-section {
+        flex: 1;
+        
+        &.center {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    }
+}
+
+.player-info {
+    display: flex;
+    gap: 1rem;
+}
+
+.player-avatar {
+    width: 64px;
+    height: 64px;
+    border: 3px solid $primary;
+    background: rgba(255, 255, 255, 0.1);
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.player-stats {
+    flex: 1;
+    
+    h3 {
+        font-size: 0.8rem;
+        color: $accent;
+        margin-bottom: 0.5rem;
+    }
+}
+
+.stat-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+    font-size: 0.6rem;
+    
+    .stat-label {
+        width: 30px;
+        color: $secondary;
+    }
+    
+    span:last-child {
+        width: 80px;
+        text-align: right;
+        color: rgba(255, 255, 255, 0.7);
+    }
+}
+
+.bar {
+    flex: 1;
+    height: 16px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.bar-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+    position: relative;
+    
+    &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 50%;
+        background: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), transparent);
+    }
+}
+
+.health-bar .bar-fill {
+    background: linear-gradient(90deg, $danger, lighten($danger, 10%));
+}
+
+.xp-bar .bar-fill {
+    background: linear-gradient(90deg, $secondary, lighten($secondary, 10%));
+}
+
+.level-info {
+    text-align: center;
+    
+    h2 {
+        font-size: 1.2rem;
+        color: $accent;
+        margin-bottom: 0.5rem;
+    }
+    
+    p {
+        font-size: 0.7rem;
+        color: $secondary;
+    }
+}
+
+.combat-log {
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    padding: 0.8rem;
+    height: 100px;
+    overflow-y: auto;
+    font-size: 0.5rem;
+    line-height: 1.6;
+    
+    p {
+        margin: 0.3rem 0;
+        color: rgba(255, 255, 255, 0.8);
+        
+        &.damage {
+            color: $danger;
+        }
+        
+        &.heal {
+            color: $success;
+        }
+        
+        &.info {
+            color: $secondary;
+        }
+    }
+    
+    &::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    &::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.3);
+    }
+    
+    &::-webkit-scrollbar-thumb {
+        background: $secondary;
+        border-radius: 0;
+    }
+}
+
+#game-canvas-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: radial-gradient(circle at center, lighten($game-bg, 5%) 0%, $game-bg 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+#game-canvas {
+    border: 4px solid $secondary;
+    box-shadow: 
+        0 0 20px rgba(78, 205, 196, 0.3),
+        0 0 40px rgba(78, 205, 196, 0.2),
+        inset 0 0 20px rgba(0, 0, 0, 0.5);
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+}
+
+#upgrades-bar {
+    background: rgba(10, 14, 26, 0.95);
+    border-top: 4px solid $secondary;
+    padding: 1rem;
+    backdrop-filter: blur(10px);
+    
+    h3 {
+        font-size: 0.8rem;
+        color: $accent;
+        margin-bottom: 0.8rem;
+    }
+}
+
+#upgrades-list {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.upgrade-item {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid $secondary;
+    padding: 0.5rem 1rem;
+    font-size: 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    
+    .upgrade-icon {
+        width: 16px;
+        height: 16px;
+        background: $accent;
+    }
+    
+    .upgrade-level {
+        color: $primary;
+        font-weight: bold;
+    }
+}
+
+// Game Over & Victory Screens
+#game-over, #victory {
+    justify-content: center;
+    align-items: center;
+    background: rgba(10, 14, 26, 0.98);
+}
+
+.game-over-content, .victory-content {
+    text-align: center;
+    animation: fadeInUp 1s ease;
+    
+    h1 {
+        font-size: 3rem;
+        margin-bottom: 2rem;
+        text-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5);
+    }
+}
+
+.game-over-content h1 {
+    color: $danger;
+}
+
+.victory-content h1 {
+    color: $success;
+}
+
+#final-stats, #victory-stats {
+    margin: 2rem 0;
+    font-size: 0.8rem;
+    line-height: 2;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+button {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 0.8rem;
+    padding: 1rem 2rem;
+    background: $primary;
+    color: white;
+    border: 4px solid darken($primary, 10%);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 0 darken($primary, 20%);
+    
+    &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 0 darken($primary, 20%);
+        background: lighten($primary, 10%);
+    }
+    
+    &:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 0 darken($primary, 20%);
+    }
+}
+
+// Animations
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+@keyframes borderGlow {
+    0%, 100% {
+        filter: blur(4px);
+    }
+    50% {
+        filter: blur(8px);
+    }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+}
+
+// Responsive
+@media (max-width: 1200px) {
+    .game-title {
+        font-size: 2rem;
+    }
+    
+    .class-grid {
+        gap: 1rem;
+    }
+    
+    .class-card {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .game-title {
+        font-size: 1.5rem;
+    }
+    
+    .class-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    #hud {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .stat-bar {
+        font-size: 0.5rem;
+    }
+}
+
+// Utility classes
+.text-glow {
+    text-shadow: 0 0 10px currentColor;
+}
+
+.pixel-perfect {
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+}

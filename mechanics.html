@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mécaniques du Jeu - Dungeon Crawler</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background: linear-gradient(135deg, #0a0e1a 0%, #1a1e2a 100%);
+            color: white;
+            padding: 2rem;
+            line-height: 1.8;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            color: #ffd93d;
+            margin-bottom: 2rem;
+            text-align: center;
+            text-shadow: 4px 4px 0 #ff6b9d;
+        }
+        
+        h2 {
+            font-size: 1.2rem;
+            color: #4ecdc4;
+            margin: 2rem 0 1rem 0;
+            border-bottom: 3px solid #4ecdc4;
+            padding-bottom: 0.5rem;
+        }
+        
+        h3 {
+            font-size: 0.9rem;
+            color: #ff6b9d;
+            margin: 1.5rem 0 0.8rem 0;
+        }
+        
+        p, li {
+            font-size: 0.7rem;
+            margin: 0.8rem 0;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .class-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        
+        .class-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 3px solid;
+            padding: 1.5rem;
+            border-radius: 8px;
+        }
+        
+        .class-box.archer { border-color: #2ecc71; }
+        .class-box.knight { border-color: #3498db; }
+        .class-box.tank { border-color: #e67e22; }
+        .class-box.mage { border-color: #9b59b6; }
+        
+        .stat-list {
+            list-style: none;
+            margin: 1rem 0;
+        }
+        
+        .stat-list li {
+            padding: 0.5rem;
+            margin: 0.3rem 0;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .zone-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        
+        .zone-box {
+            padding: 1rem;
+            border: 3px solid;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .zone-1 { border-color: #4a7c2f; }
+        .zone-2 { border-color: #4a4a6a; }
+        .zone-3 { border-color: #ff4500; }
+        .zone-4 { border-color: #1e90ff; }
+        .zone-5 { border-color: #16c79a; }
+        
+        .highlight {
+            color: #ffd93d;
+            font-weight: bold;
+        }
+        
+        .warning {
+            background: rgba(255, 71, 87, 0.2);
+            border-left: 4px solid #ff4757;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .tip {
+            background: rgba(46, 213, 115, 0.2);
+            border-left: 4px solid #2ed573;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        code {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 0.2rem 0.5rem;
+            color: #4ecdc4;
+            font-size: 0.6rem;
+        }
+        
+        .button-link {
+            display: inline-block;
+            background: #ff6b9d;
+            color: white;
+            padding: 1rem 2rem;
+            text-decoration: none;
+            border: 4px solid #e55587;
+            margin: 2rem auto;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+        
+        .button-link:hover {
+            transform: translateY(-4px);
+        }
+        
+        .center {
+            text-align: center;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.6rem;
+        }
+        
+        th, td {
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            padding: 0.8rem;
+            text-align: left;
+        }
+        
+        th {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffd93d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚔️ GUIDE DU DUNGEON CRAWLER ⚔️</h1>
+        
+        <div class="center">
+            <a href="index.html" class="button-link">▶ JOUER MAINTENANT ◀</a>
+        </div>
+        
+        <h2>📖 Vue d'ensemble</h2>
+        <p>
+            Dungeon Crawler est un <span class="highlight">roguelike</span> en vue du dessus avec 
+            <span class="highlight">génération procédurale</span> de donjons. Chaque niveau est unique 
+            et généré aléatoirement grâce à l'algorithme <span class="highlight">BSP</span> 
+            (Binary Space Partitioning).
+        </p>
+        
+        <div class="tip">
+            <strong>🎯 Objectif :</strong> Survivre aux 50 niveaux, vaincre tous les boss, 
+            et conquérir les 5 zones thématiques !
+        </div>
+        
+        <h2>🎮 Contrôles</h2>
+        <ul class="stat-list">
+            <li><code>Z</code> - Déplacer vers le haut</li>
+            <li><code>Q</code> - Déplacer vers la gauche</li>
+            <li><code>S</code> - Déplacer vers le bas</li>
+            <li><code>D</code> - Déplacer vers la droite</li>
+            <li><code>Clic gauche</code> - Attaquer un ennemi (dans votre portée)</li>
+        </ul>
+        
+        <h2>👥 Les 4 Classes</h2>
+        
+        <div class="class-grid">
+            <div class="class-box archer">
+                <h3>🏹 ARCHER</h3>
+                <ul class="stat-list">
+                    <li>❤️ Vie : <strong>80 HP</strong></li>
+                    <li>⚔️ Dégâts : <strong>15</strong></li>
+                    <li>⚡ Vitesse : <strong>Rapide (0.5s)</strong></li>
+                    <li>🎯 Portée : <strong>Infinie</strong></li>
+                </ul>
+                <p><strong>Style :</strong> Kiting, mobilité, frappe à distance</p>
+            </div>
+            
+            <div class="class-box knight">
+                <h3>⚔️ CHEVALIER</h3>
+                <ul class="stat-list">
+                    <li>❤️ Vie : <strong>120 HP</strong></li>
+                    <li>⚔️ Dégâts : <strong>25</strong></li>
+                    <li>⚡ Vitesse : <strong>Moyenne (1s)</strong></li>
+                    <li>🎯 Portée : <strong>1 case</strong></li>
+                </ul>
+                <p><strong>Style :</strong> Équilibré, polyvalent, bon pour débuter</p>
+            </div>
+            
+            <div class="class-box tank">
+                <h3>🛡️ BOUCLIER</h3>
+                <ul class="stat-list">
+                    <li>❤️ Vie : <strong>180 HP</strong></li>
+                    <li>⚔️ Dégâts : <strong>40</strong></li>
+                    <li>⚡ Vitesse : <strong>Lente (1.5s)</strong></li>
+                    <li>🎯 Portée : <strong>Corps à corps</strong></li>
+                </ul>
+                <p><strong>Style :</strong> Tank, gros dégâts, combat rapproché</p>
+            </div>
+            
+            <div class="class-box mage">
+                <h3>✨ MAGICIEN</h3>
+                <ul class="stat-list">
+                    <li>❤️ Vie : <strong>70 HP</strong></li>
+                    <li>⚔️ Dégâts : <strong>35</strong></li>
+                    <li>⚡ Vitesse : <strong>Lente (1.2s)</strong></li>
+                    <li>🎯 Portée : <strong>4 cases</strong></li>
+                </ul>
+                <p><strong>Style :</strong> Verre canon, gros dégâts, fragile</p>
+            </div>
+        </div>
+        
+        <h2>🌍 Les 5 Zones Thématiques</h2>
+        
+        <div class="zone-grid">
+            <div class="zone-box zone-1">
+                <h3>🌲 ZONE 1</h3>
+                <p>Forêt Mystique</p>
+                <p><small>Niveaux 1-10</small></p>
+            </div>
+            <div class="zone-box zone-2">
+                <h3>⛏️ ZONE 2</h3>
+                <p>Grottes Obscures</p>
+                <p><small>Niveaux 11-20</small></p>
+            </div>
+            <div class="zone-box zone-3">
+                <h3>🔥 ZONE 3</h3>
+                <p>Terres de Lave</p>
+                <p><small>Niveaux 21-30</small></p>
+            </div>
+            <div class="zone-box zone-4">
+                <h3>🌊 ZONE 4</h3>
+                <p>Profondeurs Aquatiques</p>
+                <p><small>Niveaux 31-40</small></p>
+            </div>
+            <div class="zone-box zone-5">
+                <h3>🤖 ZONE 5</h3>
+                <p>Cité Futuriste</p>
+                <p><small>Niveaux 41-50</small></p>
+            </div>
+        </div>
+        
+        <h2>📈 Système de Progression</h2>
+        
+        <h3>💪 Montée de Niveau</h3>
+        <p>
+            Gagnez de l'XP en tuant des ennemis. À chaque niveau, vous recevez une 
+            <span class="highlight">amélioration aléatoire</span> :
+        </p>
+        <ul class="stat-list">
+            <li>⚔️ <strong>Dégâts +5</strong> - Frappez plus fort</li>
+            <li>❤️ <strong>Vie Max +20</strong> - Survivez plus longtemps</li>
+            <li>⚡ <strong>Vitesse -0.1s</strong> - Attaquez plus vite</li>
+            <li>🎯 <strong>Portée +1</strong> - Attaquez de plus loin (sauf Archer)</li>
+        </ul>
+        
+        <h3>🎯 XP et Niveaux</h3>
+        <ul class="stat-list">
+            <li>Ennemi normal : <strong>+20 XP</strong></li>
+            <li>Boss : <strong>+100 XP</strong></li>
+            <li>XP nécessaire : <strong>100 → 150 → 225...</strong> (×1.5 par niveau)</li>
+        </ul>
+        
+        <h2>👾 Ennemis et Difficulté</h2>
+        
+        <h3>📊 Progression de Difficulté</h3>
+        <p>Dans chaque zone (10 niveaux), les ennemis deviennent plus forts :</p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Niveau dans la zone</th>
+                    <th>Multiplicateur</th>
+                    <th>Exemple (Ennemi 50 HP)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Niveau 1</td>
+                    <td>×1.0</td>
+                    <td>50 HP</td>
+                </tr>
+                <tr>
+                    <td>Niveau 2</td>
+                    <td>×1.1</td>
+                    <td>55 HP</td>
+                </tr>
+                <tr>
+                    <td>Niveau 5</td>
+                    <td>×1.4</td>
+                    <td>70 HP</td>
+                </tr>
+                <tr>
+                    <td>Niveau 9</td>
+                    <td>×1.8</td>
+                    <td>90 HP</td>
+                </tr>
+                <tr>
+                    <td>Niveau 10 (BOSS)</td>
+                    <td>×1.9 + Stats doublées</td>
+                    <td>380 HP</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="warning">
+            <strong>⚠️ ATTENTION :</strong> Tous les 10 niveaux, un BOSS apparaît ! 
+            Les boss ont le double de stats et sont beaucoup plus résistants.
+        </div>
+        
+        <h3>🎭 Types d'Ennemis</h3>
+        <p>Chaque zone contient <span class="highlight">6 types d'ennemis différents</span> + 1 boss unique.</p>
+        
+        <h2>🗺️ Génération de Donjons</h2>
+        
+        <h3>🏗️ Algorithme BSP</h3>
+        <p>
+            Chaque donjon est généré avec l'algorithme <strong>Binary Space Partitioning</strong> :
+        </p>
+        <ul class="stat-list">
+            <li>Grille de <strong>50×50 cases</strong></li>
+            <li><strong>8-13 salles</strong> générées aléatoirement</li>
+            <li>Salles connectées par des <strong>corridors</strong></li>
+            <li>Spawn dans la première salle</li>
+            <li>Sortie (★) dans la dernière salle</li>
+        </ul>
+        
+        <div class="tip">
+            <strong>💡 Astuce :</strong> Explorez tout le donjon pour trouver tous les ennemis 
+            et gagner le maximum d'XP !
+        </div>
+        
+        <h2>💡 Stratégies par Classe</h2>
+        
+        <h3>🏹 Archer - Le Kiteur</h3>
+        <ul class="stat-list">
+            <li>Restez toujours en mouvement</li>
+            <li>Attaquez et reculez constamment (kiting)</li>
+            <li>Utilisez les corridors pour limiter les ennemis</li>
+            <li>Priorisez les améliorations de <strong>dégâts</strong></li>
+        </ul>
+        
+        <h3>⚔️ Chevalier - L'Équilibré</h3>
+        <ul class="stat-list">
+            <li>Approche polyvalente</li>
+            <li>Gérez bien votre positionnement</li>
+            <li>Équilibrez vos améliorations</li>
+            <li>Idéal pour apprendre le jeu</li>
+        </ul>
+        
+        <h3>🛡️ Bouclier - Le Tank</h3>
+        <ul class="stat-list">
+            <li>Foncez au corps à corps</li>
+            <li>Votre haute vie vous permet des erreurs</li>
+            <li>Focus sur <strong>dégâts</strong> et <strong>vitesse</strong></li>
+            <li>Parfait contre les boss</li>
+        </ul>
+        
+        <h3>✨ Magicien - Le Verre Canon</h3>
+        <ul class="stat-list">
+            <li>Gardez <strong>exactement 4 cases</strong> de distance</li>
+            <li>Positionnement crucial</li>
+            <li>Utilisez les obstacles pour vous protéger</li>
+            <li>Priorisez <strong>vie</strong> et <strong>vitesse</strong></li>
+        </ul>
+        
+        <h2>🎯 Conseils Généraux</h2>
+        
+        <div class="tip">
+            <ul class="stat-list">
+                <li>✓ Explorez entièrement chaque niveau pour l'XP</li>
+                <li>✓ Les améliorations sont permanentes</li>
+                <li>✓ Les ennemis attaquent automatiquement au corps à corps</li>
+                <li>✓ Utilisez les murs pour bloquer les ennemis</li>
+                <li>✓ La sortie (★) n'apparaît qu'une fois tous les ennemis tués</li>
+                <li>✓ Surveillez votre barre de vie constamment</li>
+            </ul>
+        </div>
+        
+        <h2>🏆 Défis et Objectifs</h2>
+        
+        <ul class="stat-list">
+            <li>🥉 <strong>Bronze :</strong> Atteindre le niveau 10 (Premier boss)</li>
+            <li>🥈 <strong>Argent :</strong> Atteindre le niveau 25 (Zone Lave)</li>
+            <li>🥇 <strong>Or :</strong> Atteindre le niveau 40 (Zone Eau)</li>
+            <li>💎 <strong>Diamant :</strong> Terminer les 50 niveaux !</li>
+        </ul>
+        
+        <h2>⚙️ Détails Techniques</h2>
+        
+        <h3>🎨 Technologies</h3>
+        <ul class="stat-list">
+            <li><strong>Canvas HTML5</strong> - Rendu du jeu</li>
+            <li><strong>JavaScript ES6+</strong> - Logique de jeu</li>
+            <li><strong>SCSS</strong> - Styles modulaires</li>
+            <li><strong>Node.js</strong> - Serveur de développement</li>
+        </ul>
+        
+        <h3>📐 Paramètres du Jeu</h3>
+        <ul class="stat-list">
+            <li>Grille : <code>50×50 cases</code></li>
+            <li>Canvas : <code>800×600 pixels</code></li>
+            <li>Viewport : <code>25×20 cases</code></li>
+            <li>Taille cellule : <code>16 pixels</code></li>
+        </ul>
+        
+        <div class="center" style="margin-top: 4rem;">
+            <a href="index.html" class="button-link">▶ COMMENCER L'AVENTURE ◀</a>
+        </div>
+        
+        <p class="center" style="margin-top: 2rem; font-size: 0.6rem; color: rgba(255, 255, 255, 0.5);">
+            Développé avec passion | Version 1.0.0 | 2024
+        </p>
+    </div>
+</body>
+</html>
