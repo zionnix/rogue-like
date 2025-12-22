@@ -3118,6 +3118,8 @@ class Game {
         this.sprites.healer.src = './pixel_art/helping/healer.png';
         
         // Charger les images de zones (tuiles)
+        // TEXTURES DÉSACTIVÉES - Utilisation des couleurs à la place
+        /*
         this.zoneImages = {};
         for (let zone = 1; zone <= 5; zone++) {
             this.zoneImages[zone] = {
@@ -3129,6 +3131,7 @@ class Game {
             this.zoneImages[zone].path.src = `./pixel_art/zone/${zone}/path.jpg`;
             this.zoneImages[zone].wall.src = `./pixel_art/zone/${zone}/wall.jpg`;
         }
+        */
         
         // ===== SYSTÈME AUDIO =====
         this.sounds = {
@@ -7000,23 +7003,19 @@ class Game {
         const zone = Math.ceil(this.currentLevel / CONFIG.LEVELS_PER_ZONE) || 1;
         const zoneData = CONFIG.ZONES[zone] || CONFIG.ZONES[1];
         const zoneColors = zoneData.colors;
-        const zoneImageSet = this.zoneImages[zone];
-        
+
         // Dessiner le donjon
         for (let y = 0; y < this.viewportHeight; y++) {
             for (let x = 0; x < this.viewportWidth; x++) {
                 const gridX = Math.floor(this.camera.x + x);
                 const gridY = Math.floor(this.camera.y + y);
-                
+
                 if (gridX >= 0 && gridX < CONFIG.GRID_SIZE &&
                     gridY >= 0 && gridY < CONFIG.GRID_SIZE) {
 
                     const cell = this.dungeon.grid[gridY][gridX];
-                    // Calculer la position à l'écran en tenant compte du décalage de la caméra
-                    const cameraOffsetX = (this.camera.x - Math.floor(this.camera.x)) * CONFIG.CELL_SIZE;
-                    const cameraOffsetY = (this.camera.y - Math.floor(this.camera.y)) * CONFIG.CELL_SIZE;
-                    const screenX = x * CONFIG.CELL_SIZE - cameraOffsetX;
-                    const screenY = y * CONFIG.CELL_SIZE - cameraOffsetY;
+                    const screenX = x * CONFIG.CELL_SIZE;
+                    const screenY = y * CONFIG.CELL_SIZE;
 
                     // Vérifier si on est dans une salle de soins
                     let isHealingRoom = false;
@@ -7027,6 +7026,30 @@ class Game {
                             break;
                         }
                     }
+
+                    // Dessiner la cellule avec couleurs uniquement
+                    if (cell === 1) {
+                        // Mur
+                        ctx.fillStyle = zoneColors[0];
+                        ctx.fillRect(screenX, screenY, CONFIG.CELL_SIZE + 1, CONFIG.CELL_SIZE + 1);
+                    } else if (isHealingRoom) {
+                        // Sol vert clair pour les salles de soins
+                        ctx.fillStyle = '#3d5a3d';
+                        ctx.fillRect(screenX, screenY, CONFIG.CELL_SIZE + 1, CONFIG.CELL_SIZE + 1);
+                    } else {
+                        // Sol normal - couleur de la zone
+                        ctx.fillStyle = zoneColors[1];
+                        ctx.fillRect(screenX, screenY, CONFIG.CELL_SIZE + 1, CONFIG.CELL_SIZE + 1);
+                    }
+
+                    /* CODE AVEC TEXTURES - DÉSACTIVÉ
+                    const zoneImageSet = this.zoneImages[zone];
+
+                    // Calculer la position à l'écran en tenant compte du décalage de la caméra
+                    const cameraOffsetX = (this.camera.x - Math.floor(this.camera.x)) * CONFIG.CELL_SIZE;
+                    const cameraOffsetY = (this.camera.y - Math.floor(this.camera.y)) * CONFIG.CELL_SIZE;
+                    const screenX = x * CONFIG.CELL_SIZE - cameraOffsetX;
+                    const screenY = y * CONFIG.CELL_SIZE - cameraOffsetY;
 
                     // Dessiner la cellule avec les images appropriées
                     if (cell === 1) {
@@ -7043,20 +7066,20 @@ class Game {
                         ctx.fillRect(screenX, screenY, CONFIG.CELL_SIZE + 1, CONFIG.CELL_SIZE + 1);
                     } else {
                         // Chambre ou path - utiliser les images appropriées
-                        const cellType = this.dungeon.cellType && this.dungeon.cellType[gridY] ? 
+                        const cellType = this.dungeon.cellType && this.dungeon.cellType[gridY] ?
                                         this.dungeon.cellType[gridY][gridX] : 'chamber';
-                        
+
                         let imageToUse = zoneImageSet.chamber;
                         let needsRotation = false;
                         let orientation = 'horizontal';
-                        
+
                         if (cellType === 'path') {
                             imageToUse = zoneImageSet.path;
                             orientation = this.dungeon.cellOrientation && this.dungeon.cellOrientation[gridY] ?
                                          this.dungeon.cellOrientation[gridY][gridX] : 'horizontal';
                             needsRotation = (orientation === 'vertical');
                         }
-                        
+
                         if (imageToUse.complete) {
                             // Vérifier la transparence pour zones 4 et 5 (tunnels)
                             let alpha = 1;
@@ -7068,9 +7091,9 @@ class Game {
                                     alpha = 0.25; // 75% transparent = 25% opaque
                                 }
                             }
-                            
+
                             ctx.globalAlpha = alpha;
-                            
+
                             if (needsRotation) {
                                 // Rotation de 90 degrés pour les paths verticaux
                                 ctx.save();
@@ -7081,7 +7104,7 @@ class Game {
                             } else {
                                 ctx.drawImage(imageToUse, screenX, screenY, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
                             }
-                            
+
                             ctx.globalAlpha = 1; // Réinitialiser l'alpha
                         } else {
                             // Image non chargée - utiliser couleur de secours
@@ -7089,6 +7112,7 @@ class Game {
                             ctx.fillRect(screenX, screenY, CONFIG.CELL_SIZE + 1, CONFIG.CELL_SIZE + 1);
                         }
                     }
+                    */
                 }
             }
         }
