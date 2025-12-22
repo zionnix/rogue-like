@@ -5568,8 +5568,12 @@ class Game {
         const levelInZone = ((this.currentLevel - 1) % CONFIG.LEVELS_PER_ZONE) + 1;
         const isBossLevel = levelInZone === CONFIG.LEVELS_PER_ZONE;
         if (!isBossLevel) {
-            // Pour les niveaux normaux, jouer la musique de zone appropriée
-            this.playMusic('zone', currentZone);
+            // Pour les niveaux normaux, vérifier si on doit changer de musique
+            const musicZone = this.getMusicZoneForLevel(this.currentLevel);
+            // Ne changer la musique que si ce n'est pas déjà celle qui joue
+            if (this.currentMusic !== this.sounds.zoneMusic[musicZone]) {
+                this.playMusic('zone', currentZone);
+            }
         }
     }
     
