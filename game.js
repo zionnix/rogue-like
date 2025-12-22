@@ -246,13 +246,6 @@ const CONFIG = {
             rarity: 'COMMON',
             maxLevel: 10
         },
-        HEALTH_BOOST: {
-            id: 'health_boost',
-            name: 'Vitalité',
-            description: '+50 PV max et actuels (max 10 niveaux)',
-            rarity: 'COMMON',
-            maxLevel: 10
-        },
 
         // RARE (30%)
         SHIELD: {
@@ -276,12 +269,13 @@ const CONFIG = {
             rarity: 'RARE',
             maxLevel: 10
         },
-        REGENERATION: {
-            id: 'regeneration',
-            name: 'Régénération',
-            description: 'Restaure 30% PV sur 3s',
-            rarity: 'RARE',
-            maxLevel: 5
+        
+        HEALTH_BOOST: {
+            id: 'health_boost',
+            name: 'Vitalité',
+            description: '+50 PV max et actuels (max 10 niveaux)',
+            rarity: 'COMMON',
+            maxLevel: 10
         },
 
         // EPIC (15%)
@@ -2723,9 +2717,8 @@ class FuturisticBoss extends Enemy {
         this.level = level;
         this.zone = zone;
 
-        // Statistiques de boss
-        this.health = 1000;
-        this.maxHealth = 1000;
+        // Statistiques de boss (héritées du constructor parent, ne pas écraser)
+        this.maxHealth = this.health; // Sauvegarder la santé max calculée par le parent
         this.phase = 1; // Phase 1: lasers, Phase 2: bouclier, Phase 3: drones, Phase 4: bombes
         this.phaseTransitionTriggered = {
             phase2: false,
