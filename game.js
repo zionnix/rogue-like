@@ -3163,6 +3163,10 @@ class Game {
         this.ambientTimer = 0;
         this.ambientInterval = 0; // Sera défini aléatoirement
 
+        // Cooldown de déplacement
+        this.movementCooldown = 0;
+        this.movementDelay = 0.5; // 0.5 secondes entre chaque déplacement
+
         // ===== FONCTIONS AUDIO HELPER =====
         this.playSound = (soundName) => {
             if (this.sounds[soundName]) {
@@ -3983,14 +3987,19 @@ class Game {
     }
     
     handlePlayerMovement() {
+        // Vérifier le cooldown de déplacement
+        if (this.movementCooldown > 0) {
+            return; // Ne pas bouger si le cooldown n'est pas terminé
+        }
+
         let dx = 0;
         let dy = 0;
-        
+
         if (this.keys['z']) dy = -1;
         if (this.keys['s']) dy = 1;
         if (this.keys['q']) dx = -1;
         if (this.keys['d']) dx = 1;
-        
+
         if (dx !== 0 || dy !== 0) {
             const newX = this.player.x + dx;
             const newY = this.player.y + dy;
@@ -4005,6 +4014,9 @@ class Game {
             if (this.canMoveTo(newX, newY)) {
                 this.player.x = newX;
                 this.player.y = newY;
+
+                // Réinitialiser le cooldown de déplacement
+                this.movementCooldown = this.movementDelay;
 
                 // Activer l'animation de marche
                 this.player.isWalking = true;
@@ -6841,6 +6853,14 @@ class Game {
 
         const deltaTime = (currentTime - this.lastTime) / 1000;
         this.lastTime = currentTime;
+
+        // Mise à jour du cooldown de déplacement
+        if (this.movementCooldown > 0) {
+            this.movementCooldown -= deltaTime;
+            if (this.movementCooldown < 0) {
+                this.movementCooldown = 0;
+            }
+        }
 
         // Mise à jour
         this.player.update(deltaTime);
