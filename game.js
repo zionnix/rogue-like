@@ -3061,6 +3061,14 @@ class Game {
         this.sounds.newLevel.volume = this.soundVolume;
         this.sounds.newWorld.volume = this.soundVolume;
 
+        // Précharger les sons courts pour une réactivité immédiate
+        this.sounds.click.preload = 'auto';
+        this.sounds.click.load();
+        this.sounds.newLevel.preload = 'auto';
+        this.sounds.newLevel.load();
+        this.sounds.newWorld.preload = 'auto';
+        this.sounds.newWorld.load();
+
         this.currentMusic = null;
         this.isBossMusic = false;
 
@@ -5571,7 +5579,8 @@ class Game {
             // Pour les niveaux normaux, vérifier si on doit changer de musique
             const musicZone = this.getMusicZoneForLevel(this.currentLevel);
             // Ne changer la musique que si ce n'est pas déjà celle qui joue
-            if (this.currentMusic !== this.sounds.zoneMusic[musicZone]) {
+            const targetMusic = this.sounds.zoneMusic[musicZone];
+            if (!this.currentMusic || this.currentMusic.src !== targetMusic.src) {
                 this.playMusic('zone', currentZone);
             }
         }
@@ -5613,7 +5622,7 @@ class Game {
         // Gérer les musiques en fonction de l'écran
         if (screenId === 'main-menu' || screenId === 'lore-screen' || screenId === 'lore-screen-2' || screenId === 'credits-screen') {
             // Jouer la musique de menu si elle n'est pas déjà en cours
-            if (this.currentMusic !== this.sounds.menuMusic) {
+            if (!this.currentMusic || this.currentMusic.src !== this.sounds.menuMusic.src) {
                 this.playMusic('menu');
             }
         } else if (screenId === 'game-screen') {
@@ -5623,7 +5632,8 @@ class Game {
                 this.playMusic('boss', zone);
             } else if (!this.isBossMusic) {
                 const musicZone = this.getMusicZoneForLevel(this.currentLevel);
-                if (this.currentMusic !== this.sounds.zoneMusic[musicZone]) {
+                const targetMusic = this.sounds.zoneMusic[musicZone];
+                if (!this.currentMusic || this.currentMusic.src !== targetMusic.src) {
                     this.playMusic('zone', zone);
                 }
             }
