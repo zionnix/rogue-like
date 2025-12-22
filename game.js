@@ -321,15 +321,23 @@ class DungeonGenerator {
     constructor(size, isBossLevel = false) {
         this.size = size;
         this.grid = [];
+        this.cellType = [];  // 'wall', 'chamber', 'path'
+        this.cellOrientation = [];  // 'horizontal', 'vertical' pour les paths
         this.rooms = [];
         this.isBossLevel = isBossLevel;
         this.bossRoom = null;
     }
 
     generate() {
-        // Initialiser la grille avec des murs
+        // Initialiser les grilles avec des murs
         this.grid = Array(this.size).fill(null).map(() =>
             Array(this.size).fill(1)
+        );
+        this.cellType = Array(this.size).fill(null).map(() =>
+            Array(this.size).fill('wall')
+        );
+        this.cellOrientation = Array(this.size).fill(null).map(() =>
+            Array(this.size).fill('horizontal')
         );
 
         if (this.isBossLevel) {
@@ -343,7 +351,48 @@ class DungeonGenerator {
             this.connectRooms();
         }
 
+        // Classifier les cellules passables comme chambre ou path
+        this.classifyCells();
+
         return this.grid;
+    }
+    
+    classifyCells() {
+        // Marquer toutes les cellules qui ne sont pas des salles comme des paths
+        for (let y = 0; y < this.size; y++) {
+            for (let x = 0; x < this.size; x++) {
+                if (this.grid[y][x] === 0) {  // Passable
+                    // Vérifier si c'est dans une salle
+                    let inRoom = false;
+                    for (const room of this.rooms) {
+                        if (x >= room.x && x < room.x + room.width &&
+                            y >= room.y && y < room.y + room.height) {
+                            this.cellType[y][x] = 'chamber';
+                            inRoom = true;
+                            break;
+                        }
+                    }
+                    if (!inRoom) {
+                        this.cellType[y][x] = 'path';
+                        // Déterminer l'orientation du path
+                        this.determineCellOrientation(x, y);
+                    }
+                }
+            }
+        }
+    }
+    
+    determineCellOrientation(x, y) {
+        // Vérifier si le path a des connexions horizontales et/ou verticales
+        const hasHorizontal = (x > 0 && this.grid[y][x - 1] === 0) || (x < this.size - 1 && this.grid[y][x + 1] === 0);
+        const hasVertical = (y > 0 && this.grid[y - 1][x] === 0) || (y < this.size - 1 && this.grid[y + 1][x] === 0);
+        
+        // Si uniquement vertical ou plus de vertical que horizontal, c'est vertical
+        if (hasVertical && !hasHorizontal) {
+            this.cellOrientation[y][x] = 'vertical';
+        } else {
+            this.cellOrientation[y][x] = 'horizontal';
+        }
     }
     
     generateBossRoom() {
@@ -3067,6 +3116,19 @@ class Game {
         this.sprites.mage.src = './pixel_art/hero/magic men.png';
         this.sprites.tank.src = './pixel_art/hero/tank.png';
         this.sprites.healer.src = './pixel_art/helping/healer.png';
+        
+        // Charger les images de zones (tuiles)
+        this.zoneImages = {};
+        for (let zone = 1; zone <= 5; zone++) {
+            this.zoneImages[zone] = {
+                chamber: new Image(),
+                path: new Image(),
+                wall: new Image()
+            };
+            this.zoneImages[zone].chamber.src = `./pixel_art/zone/${zone}/chamber.jpg`;
+            this.zoneImages[zone].path.src = `./pixel_art/zone/${zone}/path.jpg`;
+            this.zoneImages[zone].wall.src = `./pixel_art/zone/${zone}/wall.jpg`;
+        }
         
         // ===== SYSTÈME AUDIO =====
         this.sounds = {
@@ -6938,6 +7000,7 @@ class Game {
         const zone = Math.ceil(this.currentLevel / CONFIG.LEVELS_PER_ZONE) || 1;
         const zoneData = CONFIG.ZONES[zone] || CONFIG.ZONES[1];
         const zoneColors = zoneData.colors;
+        const zoneImageSet = this.zoneImages[zone];
         
         // Dessiner le donjon
         for (let y = 0; y < this.viewportHeight; y++) {
@@ -6949,6 +7012,8 @@ class Game {
                     gridY >= 0 && gridY < CONFIG.GRID_SIZE) {
                     
                     const cell = this.dungeon.grid[gridY][gridX];
+                    const screenX = x * CONFIG.CELL_SIZE;
+                    const screenY = y * CONFIG.CELL_SIZE;
 
                     // Vérifier si on est dans une salle de soins
                     let isHealingRoom = false;
@@ -6960,21 +7025,67 @@ class Game {
                         }
                     }
 
+                    // Dessiner la cellule avec les images appropriées
                     if (cell === 1) {
-                        ctx.fillStyle = zoneColors[0]; // Murs
+                        // Mur
+                        if (zoneImageSet.wall.complete) {
+                            ctx.drawImage(zoneImageSet.wall, screenX, screenY, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
+                        } else {
+                            ctx.fillStyle = zoneColors[0]; // Couleur de secours
+                            ctx.fillRect(screenX, screenY, CONFIG.CELL_SIZE + 1, CONFIG.CELL_SIZE + 1);
+                        }
                     } else if (isHealingRoom) {
                         // Sol vert clair pour les salles de soins
                         ctx.fillStyle = '#3d5a3d';
+                        ctx.fillRect(screenX, screenY, CONFIG.CELL_SIZE + 1, CONFIG.CELL_SIZE + 1);
                     } else {
-                        ctx.fillStyle = zoneColors[1]; // Sol normal
+                        // Chambre ou path - utiliser les images appropriées
+                        const cellType = this.dungeon.cellType && this.dungeon.cellType[gridY] ? 
+                                        this.dungeon.cellType[gridY][gridX] : 'chamber';
+                        
+                        let imageToUse = zoneImageSet.chamber;
+                        let needsRotation = false;
+                        let orientation = 'horizontal';
+                        
+                        if (cellType === 'path') {
+                            imageToUse = zoneImageSet.path;
+                            orientation = this.dungeon.cellOrientation && this.dungeon.cellOrientation[gridY] ?
+                                         this.dungeon.cellOrientation[gridY][gridX] : 'horizontal';
+                            needsRotation = (orientation === 'vertical');
+                        }
+                        
+                        if (imageToUse.complete) {
+                            // Vérifier la transparence pour zones 4 et 5 (tunnels)
+                            let alpha = 1;
+                            if (cellType === 'path' && (zone === 4 || zone === 5)) {
+                                // Appliquer 75% de transparence quand le héros passe dessus
+                                const heroX = Math.floor(this.player.x);
+                                const heroY = Math.floor(this.player.y);
+                                if (heroX === gridX && heroY === gridY) {
+                                    alpha = 0.25; // 75% transparent = 25% opaque
+                                }
+                            }
+                            
+                            ctx.globalAlpha = alpha;
+                            
+                            if (needsRotation) {
+                                // Rotation de 90 degrés pour les paths verticaux
+                                ctx.save();
+                                ctx.translate(screenX + CONFIG.CELL_SIZE / 2, screenY + CONFIG.CELL_SIZE / 2);
+                                ctx.rotate(Math.PI / 2);
+                                ctx.drawImage(imageToUse, -CONFIG.CELL_SIZE / 2, -CONFIG.CELL_SIZE / 2, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
+                                ctx.restore();
+                            } else {
+                                ctx.drawImage(imageToUse, screenX, screenY, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
+                            }
+                            
+                            ctx.globalAlpha = 1; // Réinitialiser l'alpha
+                        } else {
+                            // Image non chargée - utiliser couleur de secours
+                            ctx.fillStyle = cellType === 'chamber' ? zoneColors[1] : '#444';
+                            ctx.fillRect(screenX, screenY, CONFIG.CELL_SIZE + 1, CONFIG.CELL_SIZE + 1);
+                        }
                     }
-
-                    ctx.fillRect(
-                        x * CONFIG.CELL_SIZE,
-                        y * CONFIG.CELL_SIZE,
-                        CONFIG.CELL_SIZE + 1,
-                        CONFIG.CELL_SIZE + 1
-                    );
                 }
             }
         }
