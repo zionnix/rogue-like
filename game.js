@@ -242,7 +242,14 @@ const CONFIG = {
         DAMAGE_BOOST: {
             id: 'damage_boost',
             name: 'Force',
-            description: '+5 dégâts par niveau',
+            description: '+10% dégâts par niveau',
+            rarity: 'COMMON',
+            maxLevel: 10
+        },
+        HEALTH_BOOST: {
+            id: 'health_boost',
+            name: 'Vitalité',
+            description: '+50 PV max et actuels (max 10 niveaux)',
             rarity: 'COMMON',
             maxLevel: 10
         },
@@ -665,8 +672,13 @@ class Player extends Entity {
 
         switch(perkId) {
             case 'damage_boost':
-                this.perkEffects.damageBonus = level * 5;
-                this.damage = CONFIG.CLASSES[this.classType].damage + this.perkEffects.damageBonus;
+                // Utiliser la nouvelle méthode applyUpgrade qui donne +10% au lieu de +5 fixe
+                this.applyUpgrade('damage');
+                break;
+
+            case 'health_boost':
+                // Utiliser la nouvelle méthode applyUpgrade qui donne +50 PV (max 10 niveaux)
+                this.applyUpgrade('health');
                 break;
 
             case 'attack_speed':
@@ -692,6 +704,43 @@ class Player extends Entity {
 
             case 'second_life':
                 this.perkEffects.hasSecondLife = true;
+                break;
+        }
+    }
+
+    // Appliquer les upgrades de stats basiques
+    applyUpgrade(upgradeType) {
+        switch(upgradeType) {
+            case 'damage':
+                // +10% de la force actuelle (arrondi à l'inférieur)
+                const damageBoost = Math.floor(this.damage * 0.10);
+                this.damage += Math.max(1, damageBoost); // Minimum +1 pour éviter 0
+                this.upgrades.damage++;
+                break;
+
+            case 'health':
+                // Maximum 10 niveaux
+                if (this.upgrades.health < 10) {
+                    // +50 PV max
+                    this.maxHealth += 50;
+                    // +50 PV actuels (soigne en même temps)
+                    this.health += 50;
+                    this.upgrades.health++;
+                }
+                break;
+
+            case 'speed':
+                // -0.1s de cooldown
+                this.speed = Math.max(0.1, this.speed - 0.1);
+                this.upgrades.speed++;
+                break;
+
+            case 'range':
+                // +1 case de portée (sauf pour l'archer qui a déjà infini)
+                if (this.range !== Infinity) {
+                    this.range++;
+                }
+                this.upgrades.range++;
                 break;
         }
     }
@@ -906,12 +955,21 @@ class Player extends Entity {
 
 class Enemy extends Entity {
     constructor(x, y, level, zone, isBoss = false, enemyType = null) {
-        const baseHealth = isBoss ? 200 : 50;
-        const baseDamage = isBoss ? 30 : 10;
+        let baseHealth, baseDamage;
 
-        // Calcul du multiplicateur en fonction du niveau
+        if (isBoss) {
+            // Progression des PV des boss : 500 -> 2500
+            // Zone 1: 500, Zone 2: 1000, Zone 3: 1500, Zone 4: 2000, Zone 5: 2500
+            baseHealth = 500 * zone;
+            baseDamage = 30;
+        } else {
+            baseHealth = 50;
+            baseDamage = 10;
+        }
+
+        // Calcul du multiplicateur en fonction du niveau (seulement pour les ennemis normaux)
         const levelInZone = ((level - 1) % CONFIG.LEVELS_PER_ZONE) + 1;
-        const multiplier = 1 + (levelInZone - 1) * 0.1;
+        const multiplier = isBoss ? 1 : (1 + (levelInZone - 1) * 0.1);
 
         // Type d'ennemi (passé en paramètre ou melee par défaut)
         const combatType = enemyType || 'melee';
@@ -2998,7 +3056,7 @@ class Game {
             knight: new Image(),
             mage: new Image(),
             tank: new Image(),
-            healer: new Image()
+            healer: new Image() 
         };
 
         this.sprites.archer.src = './pixel_art/hero/archer.png';
@@ -5740,6 +5798,7 @@ class Game {
             'double_strike': '⚔️⚔️',
             'attack_speed': '⚡',
             'damage_boost': '💪',
+            'health_boost': '❤️',
             'shield': '🛡️',
             'critical': '💥',
             'knockback': '👊',
@@ -5805,29 +5864,33 @@ class Game {
             range: '🎯 Portée'
         };
         
-        // Valeurs de bonus par niveau d'upgrade
-        const upgradeValues = {
-            damage: 5,      // +5 dégâts par niveau
-            health: 20,     // +20 vie max par niveau
-            speed: -0.1,    // -0.1s de cooldown par niveau
-            range: 1        // +1 portée par niveau
-        };
-        
-        const upgradeUnits = {
-            damage: 'dégâts',
-            health: 'vie max',
-            speed: 's cooldown',
-            range: 'case(s)'
-        };
-        
+        // Afficher les upgrades actifs
         for (const [key, value] of Object.entries(this.player.upgrades)) {
             if (value > 0) {
-                const totalBonus = upgradeValues[key] * value;
-                const bonusText = key === 'speed' ? `${totalBonus}` : `+${totalBonus}`;
+                let bonusText = '';
+
+                // Calculer et afficher le bonus selon le type
+                if (key === 'damage') {
+                    // +10% par niveau (afficher le bonus cumulé actuel)
+                    const classBaseDamage = CONFIG.CLASSES[this.player.classType].damage;
+                    const currentBonus = this.player.damage - classBaseDamage;
+                    bonusText = `+${currentBonus} dégâts (+10%/niv)`;
+                } else if (key === 'health') {
+                    // +50 PV par niveau
+                    const totalBonus = 50 * value;
+                    bonusText = `+${totalBonus} PV max`;
+                } else if (key === 'speed') {
+                    // -0.1s par niveau
+                    const totalBonus = -0.1 * value;
+                    bonusText = `${totalBonus}s cooldown`;
+                } else if (key === 'range') {
+                    // +1 case par niveau
+                    bonusText = `+${value} case(s)`;
+                }
 
                 const div = document.createElement('div');
                 div.className = 'upgrade-item';
-                div.setAttribute('data-tooltip', `${bonusText} ${upgradeUnits[key]}`);
+                div.setAttribute('data-tooltip', bonusText);
                 div.innerHTML = `
                     <span>${upgradeNames[key]}</span>
                     <span class="upgrade-level">Niv. ${value}</span>
@@ -5860,6 +5923,34 @@ class Game {
             shieldDiv.style.color = '#3498db';
             shieldDiv.textContent = '🛡️ BOUCLIER ACTIF';
             upgradesList.appendChild(shieldDiv);
+        }
+
+        // Mettre à jour la barre de vie du boss
+        const bossHealthBar = document.getElementById('boss-health-bar');
+        if (this.currentBoss && this.currentBoss.health > 0) {
+            // Afficher la barre de vie du boss
+            bossHealthBar.style.display = 'block';
+
+            // Déterminer le nom du boss selon la zone
+            const zone = Math.ceil(this.currentLevel / CONFIG.LEVELS_PER_ZONE);
+            const bossNames = {
+                1: '🌲 Sylvanus l\'Ancien',
+                2: '⛰️ Gorath le Ténébreux',
+                3: '🌋 Ignis le Calciné',
+                4: '🌊 Abyssia la Dévorante',
+                5: '🤖 NEXUS-Omega'
+            };
+
+            document.getElementById('boss-name-label').textContent = bossNames[zone] || 'Boss';
+
+            // Mettre à jour la barre de vie
+            const bossHealthPercent = (this.currentBoss.health / this.currentBoss.maxHealth) * 100;
+            document.getElementById('boss-health-fill').style.width = bossHealthPercent + '%';
+            document.getElementById('boss-health-text').textContent =
+                `${Math.max(0, this.currentBoss.health)}/${this.currentBoss.maxHealth}`;
+        } else {
+            // Cacher la barre de vie du boss
+            bossHealthBar.style.display = 'none';
         }
     }
     
@@ -6956,16 +7047,18 @@ class Game {
                         ey + CONFIG.CELL_SIZE / 2
                     );
                 }
-                
-                // Barre de vie
-                const healthPercent = enemy.health / enemy.maxHealth;
-                ctx.fillStyle = enemy.isAggro ? '#ff6b6b' : '#2ecc71';
-                ctx.fillRect(ex, ey - 6, CONFIG.CELL_SIZE * healthPercent, 4);
-                
-                // Bordure de la barre de vie
-                ctx.strokeStyle = '#000';
-                ctx.lineWidth = 1;
-                ctx.strokeRect(ex, ey - 6, CONFIG.CELL_SIZE, 4);
+
+                // Barre de vie (seulement pour les ennemis normaux, pas les boss)
+                if (!enemy.isBoss) {
+                    const healthPercent = enemy.health / enemy.maxHealth;
+                    ctx.fillStyle = enemy.isAggro ? '#ff6b6b' : '#2ecc71';
+                    ctx.fillRect(ex, ey - 6, CONFIG.CELL_SIZE * healthPercent, 4);
+
+                    // Bordure de la barre de vie
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(ex, ey - 6, CONFIG.CELL_SIZE, 4);
+                }
             }
         }
         
