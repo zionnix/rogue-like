@@ -1472,7 +1472,7 @@ button:active {
   bottom: 50px;
   width: 200px;
   height: 60px;
-  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.3) 50%, transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(255, 215, 0, 0.6) 0%, rgba(255, 215, 0, 0.2) 50%, transparent 70%);
   border-radius: 50%;
   animation: circleGlow 1.5s ease-in-out infinite;
 }
@@ -1498,8 +1498,8 @@ button:active {
   width: 150px;
   height: 150px;
   image-rendering: pixelated;
-  filter: brightness(0) invert(1);
-  animation: heroColorReturn 2s ease-in-out 1.5s forwards;
+  filter: brightness(0.5) drop-shadow(0 0 10px rgba(255, 215, 0, 0.6));
+  animation: heroColorReturn 2s ease-in-out forwards;
 }
 
 @keyframes heroRevive {
@@ -1519,10 +1519,10 @@ button:active {
 
 @keyframes heroColorReturn {
   0% {
-    filter: brightness(0) invert(1);
+    filter: brightness(0.5) drop-shadow(0 0 10px rgba(255, 215, 0, 0.6));
   }
   100% {
-    filter: brightness(1) invert(0) drop-shadow(0 0 20px rgba(243, 156, 18, 0.8));
+    filter: brightness(1) drop-shadow(0 0 20px rgba(243, 156, 18, 0.8));
   }
 }
 

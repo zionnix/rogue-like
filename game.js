@@ -3100,6 +3100,8 @@ class Game {
 
             // Sons spéciaux
             angelTheme: new Audio('./sound_design/angel_theme.mp3'),
+            victory: new Audio('./sound_design/victory.mp3'),
+            gameOver: new Audio('./sound_design/gameOver.mp3'),
 
             // Sons d'ambiance
             ambientLevel4: new Audio('./sound_design/ambiant_level4.mp3'),
@@ -3135,6 +3137,8 @@ class Game {
         this.sounds.newLevel.volume = this.soundVolume;
         this.sounds.newWorld.volume = this.soundVolume;
         this.sounds.angelTheme.volume = this.musicVolume;
+        this.sounds.victory.volume = this.musicVolume;
+        this.sounds.gameOver.volume = this.musicVolume;
         this.sounds.ambientLevel4.volume = this.soundVolume * 0.6; // Plus doux
         this.sounds.stoneFall.volume = this.soundVolume * 0.6; // Plus doux
 
@@ -5728,6 +5732,10 @@ class Game {
         console.log('   HP du joueur:', this.player.health);
         console.log('   État du jeu:', this.state);
 
+        // Arrêter la musique actuelle et jouer le son de game over
+        this.stopMusic();
+        this.playSound('gameOver');
+
         this.state = 'gameover';
         this.showScreen('game-over');
 
@@ -5740,6 +5748,10 @@ class Game {
     }
     
     victory() {
+        // Arrêter la musique actuelle et jouer le son de victoire
+        this.stopMusic();
+        this.playSound('victory');
+
         this.state = 'victory';
         this.showScreen('victory');
         
