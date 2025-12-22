@@ -6963,15 +6963,15 @@ class Game {
             return !anim.finished;
         });
         
-        // Mise à jour caméra
-        this.camera.x = Math.max(0, Math.min(
+        // Mise à jour caméra - arrondir pour garder l'alignement des textures
+        this.camera.x = Math.floor(Math.max(0, Math.min(
             this.player.x - this.viewportWidth / 2,
             CONFIG.GRID_SIZE - this.viewportWidth
-        ));
-        this.camera.y = Math.max(0, Math.min(
+        )));
+        this.camera.y = Math.floor(Math.max(0, Math.min(
             this.player.y - this.viewportHeight / 2,
             CONFIG.GRID_SIZE - this.viewportHeight
-        ));
+        )));
         
         // Rendu
         this.render();
