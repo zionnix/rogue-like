@@ -3165,7 +3165,7 @@ class Game {
 
         // Cooldown de déplacement
         this.movementCooldown = 0;
-        this.movementDelay = 0.5; // 0.5 secondes entre chaque déplacement
+        this.movementDelay = 0.2; // 0.2 secondes entre chaque déplacement
 
         // ===== FONCTIONS AUDIO HELPER =====
         this.playSound = (soundName) => {
