@@ -3096,7 +3096,20 @@ class Game {
                 3: new Audio('./sound_design/boss3.mp3'),
                 4: new Audio('./sound_design/boss4.mp3'),
                 5: new Audio('./sound_design/boss5.mp3')
-            }
+            },
+
+            // Sons spéciaux
+            angelTheme: new Audio('./sound_design/angel_theme.mp3'),
+
+            // Sons d'ambiance
+            ambientLevel4: new Audio('./sound_design/ambiant_level4.mp3'),
+            stoneFall: new Audio('./sound_design/stone_fall.mp3'),
+
+            // Sons de pas selon la zone
+            stepOnGrass: new Audio('./sound_design/stepOnGrass.mp3'),
+            stepOnRock: new Audio('./sound_design/stepOnRock.mp3'),
+            stepOnSand: new Audio('./sound_design/stepOnSand.mp3'),
+            stepOnSteel: new Audio('./sound_design/steponSteal.mp3')
         };
 
         // Configuration des volumes
@@ -3121,6 +3134,15 @@ class Game {
         this.sounds.click.volume = this.soundVolume;
         this.sounds.newLevel.volume = this.soundVolume;
         this.sounds.newWorld.volume = this.soundVolume;
+        this.sounds.angelTheme.volume = this.musicVolume;
+        this.sounds.ambientLevel4.volume = this.soundVolume * 0.6; // Plus doux
+        this.sounds.stoneFall.volume = this.soundVolume * 0.6; // Plus doux
+
+        // Sons de pas - volume bas pour être subtil
+        this.sounds.stepOnGrass.volume = this.soundVolume * 0.3;
+        this.sounds.stepOnRock.volume = this.soundVolume * 0.3;
+        this.sounds.stepOnSand.volume = this.soundVolume * 0.3;
+        this.sounds.stepOnSteel.volume = this.soundVolume * 0.3;
 
         // Précharger les sons courts pour une réactivité immédiate
         this.sounds.click.preload = 'auto';
@@ -3132,6 +3154,10 @@ class Game {
 
         this.currentMusic = null;
         this.isBossMusic = false;
+
+        // Timers pour sons d'ambiance
+        this.ambientTimer = 0;
+        this.ambientInterval = 0; // Sera défini aléatoirement
 
         // ===== FONCTIONS AUDIO HELPER =====
         this.playSound = (soundName) => {
@@ -3980,6 +4006,9 @@ class Game {
                 this.player.isWalking = true;
                 this.player.walkFrame = (this.player.walkFrame + 1) % 4;
 
+                // Jouer le son de pas selon le niveau
+                this.playFootstepSound();
+
                 // Si c'est un niveau de boss et que le joueur entre dans la salle
                 if (this.isBossLevel && !this.bossRoomSealed && this.dungeon.bossRoom) {
                     const bossRoom = this.dungeon.bossRoom;
@@ -4446,10 +4475,57 @@ class Game {
         }
     }
 
+    // Mettre à jour les sons d'ambiance selon le niveau
+    updateAmbientSounds(deltaTime) {
+        // Incrémenter le timer
+        this.ambientTimer += deltaTime;
+
+        // Si le timer atteint l'intervalle, jouer un son d'ambiance
+        if (this.ambientTimer >= this.ambientInterval) {
+            // Réinitialiser le timer
+            this.ambientTimer = 0;
+
+            // Déterminer quel son jouer selon le niveau
+            if (this.currentLevel >= 31 && this.currentLevel <= 40) {
+                // Niveaux 31-40 : ambiant_level4.mp3 toutes les 3-9 secondes
+                this.playSound('ambientLevel4');
+                this.ambientInterval = 3 + Math.random() * 6; // 3 à 9 secondes
+            } else if (this.currentLevel >= 11 && this.currentLevel <= 19) {
+                // Niveaux 11-19 : stone_fall.mp3 toutes les 4-15 secondes
+                this.playSound('stoneFall');
+                this.ambientInterval = 4 + Math.random() * 11; // 4 à 15 secondes
+            } else {
+                // Pour les autres niveaux, définir un intervalle par défaut
+                this.ambientInterval = 10; // Pas de son d'ambiance
+            }
+        }
+    }
+
+    // Jouer le son de pas selon le niveau
+    playFootstepSound() {
+        // Déterminer quel son de pas jouer selon le niveau
+        if (this.currentLevel >= 1 && this.currentLevel <= 10) {
+            // Niveaux 1-10 : herbe
+            this.playSound('stepOnGrass');
+        } else if (this.currentLevel >= 11 && this.currentLevel <= 30) {
+            // Niveaux 11-30 : roche
+            this.playSound('stepOnRock');
+        } else if (this.currentLevel >= 31 && this.currentLevel <= 40) {
+            // Niveaux 31-40 : sable
+            this.playSound('stepOnSand');
+        } else if (this.currentLevel >= 41 && this.currentLevel <= 50) {
+            // Niveaux 41-50 : acier
+            this.playSound('stepOnSteel');
+        }
+    }
+
     // Animation de seconde vie
     playSecondLifeAnimation() {
         console.log('🔥 playSecondLifeAnimation appelée!');
-        
+
+        // Jouer le thème de l'ange
+        this.playSound('angelTheme');
+
         // Mettre le jeu en pause
         this.state = 'second_life_animation';
 
@@ -6760,6 +6836,7 @@ class Game {
         this.updateMagicRingsCollision(); // Collision des anneaux magiques
         this.updateEnemies(deltaTime);
         this.updateBossLogic(deltaTime); // Mise à jour spécifique au boss
+        this.updateAmbientSounds(deltaTime); // Mise à jour des sons d'ambiance
 
         // Vérifier si le boss 5 a <= 0 PV
         if (this.currentBoss && this.currentBoss.zone === 5 && this.currentBoss.health <= 0) {
