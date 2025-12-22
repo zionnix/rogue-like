@@ -3010,31 +3010,31 @@ class Game {
         // ===== SYSTÈME AUDIO =====
         this.sounds = {
             // Son de clic pour tous les boutons
-            click: new Audio('./sounds/click.mp3'),
+            click: new Audio('./sound_design/click.mp3'),
 
             // Sons de progression
-            newLevel: new Audio('./sounds/new_level.mp3'),
-            newWorld: new Audio('./sounds/level_up.mp3'),
+            newLevel: new Audio('./sound_design/new_level.mp3'),
+            newWorld: new Audio('./sound_design/level_up.mp3'),
 
             // Musiques de fond
-            menuMusic: new Audio('./sounds/theme_menu.mp3'),
+            menuMusic: new Audio('./sound_design/theme_menu.mp3'),
 
             // Musiques par zone (monde)
             zoneMusic: {
-                1: new Audio('./sounds/level1.mp3'),
-                2: new Audio('./sounds/level2.mp3'),
-                3: new Audio('./sounds/level3.mp3'),
-                4: new Audio('./sounds/level4.mp3'),
-                5: new Audio('./sounds/level5.mp3')
+                1: new Audio('./sound_design/level1.mp3'),
+                2: new Audio('./sound_design/level2.mp3'),
+                3: new Audio('./sound_design/level3.mp3'),
+                4: new Audio('./sound_design/level4.mp3'),
+                5: new Audio('./sound_design/level5.mp3')
             },
 
             // Musiques de boss
             bossMusic: {
-                1: new Audio('./sounds/boss1.mp3'),
-                2: new Audio('./sounds/boss2.mp3'),
-                3: new Audio('./sounds/boss3.mp3'),
-                4: new Audio('./sounds/boss4.mp3'),
-                5: new Audio('./sounds/boss5.mp3')
+                1: new Audio('./sound_design/boss1.mp3'),
+                2: new Audio('./sound_design/boss2.mp3'),
+                3: new Audio('./sound_design/boss3.mp3'),
+                4: new Audio('./sound_design/boss4.mp3'),
+                5: new Audio('./sound_design/boss5.mp3')
             }
         };
 
@@ -3085,7 +3085,9 @@ class Game {
                 newMusic = this.sounds.menuMusic;
                 this.isBossMusic = false;
             } else if (musicType === 'zone' && zone) {
-                newMusic = this.sounds.zoneMusic[zone];
+                // Utiliser la musique basée sur le niveau actuel
+                const musicZone = this.getMusicZoneForLevel(this.currentLevel);
+                newMusic = this.sounds.zoneMusic[musicZone];
                 this.isBossMusic = false;
             } else if (musicType === 'boss' && zone) {
                 newMusic = this.sounds.bossMusic[zone];
@@ -3096,6 +3098,23 @@ class Game {
                 this.currentMusic = newMusic;
                 newMusic.play().catch(e => console.log('Music play failed:', e));
             }
+        };
+
+        // Déterminer quelle musique de niveau jouer en fonction du niveau actuel
+        this.getMusicZoneForLevel = (level) => {
+            // Niveaux 1-9: level1.mp3
+            if (level >= 1 && level <= 9) return 1;
+            // Niveaux 11-19: level2.mp3
+            if (level >= 11 && level <= 19) return 2;
+            // Niveaux 21-29: level3.mp3
+            if (level >= 21 && level <= 29) return 3;
+            // Niveaux 31-39: level4.mp3
+            if (level >= 31 && level <= 39) return 4;
+            // Niveaux 41-49: level5.mp3
+            if (level >= 41 && level <= 49) return 5;
+
+            // Par défaut, retourner la zone calculée normalement
+            return Math.ceil(level / CONFIG.LEVELS_PER_ZONE);
         };
 
         this.stopMusic = () => {
@@ -5544,6 +5563,14 @@ class Game {
         } else {
             this.updateHUD();
         }
+
+        // Changer la musique si ce n'est pas un niveau de boss
+        const levelInZone = ((this.currentLevel - 1) % CONFIG.LEVELS_PER_ZONE) + 1;
+        const isBossLevel = levelInZone === CONFIG.LEVELS_PER_ZONE;
+        if (!isBossLevel) {
+            // Pour les niveaux normaux, jouer la musique de zone appropriée
+            this.playMusic('zone', currentZone);
+        }
     }
     
     gameOver() {
@@ -5590,8 +5617,11 @@ class Game {
             const zone = Math.ceil(this.currentLevel / CONFIG.LEVELS_PER_ZONE);
             if (this.currentBoss && !this.isBossMusic) {
                 this.playMusic('boss', zone);
-            } else if (!this.isBossMusic && this.currentMusic !== this.sounds.zoneMusic[zone]) {
-                this.playMusic('zone', zone);
+            } else if (!this.isBossMusic) {
+                const musicZone = this.getMusicZoneForLevel(this.currentLevel);
+                if (this.currentMusic !== this.sounds.zoneMusic[musicZone]) {
+                    this.playMusic('zone', zone);
+                }
             }
         }
     }
