@@ -976,7 +976,10 @@ class Player extends Entity {
         // Si le bouclier est actif, bloquer les dégâts
         if (this.perkEffects.shieldActive) {
             console.log('🛡️ BOUCLIER ACTIF - Dégâts bloqués');
-            if (window.game) window.game.addFloatingText(this.x, this.y, 'BLOQUÉ!', '#3498db');
+            if (window.game) {
+                window.game.addFloatingText(this.x, this.y, 'BLOQUÉ!', '#3498db');
+                window.game.playSound('shieldReflect');
+            }
             return false;
         }
 
@@ -1478,6 +1481,11 @@ class CavernBoss extends Enemy {
         const bossRoom = window.game.dungeon.bossRoom;
         if (!bossRoom) return;
 
+        // Son de stalactites qui tombent
+        if (window.game) {
+            window.game.playSound('stoneFall');
+        }
+
         for (let i = 0; i < 20; i++) {
             const x = bossRoom.x + Math.floor(Math.random() * bossRoom.width);
             const y = bossRoom.y + Math.floor(Math.random() * bossRoom.height);
@@ -1527,6 +1535,11 @@ class CavernBoss extends Enemy {
     activateDarkness() {
         this.isDark = true;
         this.darknessElapsed = 0;
+
+        // Son de téléportation
+        if (window.game) {
+            window.game.playSound('teleport');
+        }
 
         // Téléportation aléatoire
         if (window.game && window.game.dungeon) {
@@ -1809,6 +1822,8 @@ class VolcanoBoss extends Enemy {
         }
 
         if (window.game) {
+            // Son de boules de feu
+            window.game.playSound('magicSpell');
             window.game.addLog('🔥 Le boss lance des boules de feu!', 'damage');
         }
     }
@@ -1852,6 +1867,11 @@ class VolcanoBoss extends Enemy {
         } else {
             startX = bossRoom.x + Math.floor(Math.random() * bossRoom.width);
             startY = bossRoom.y + Math.floor(Math.random() * (bossRoom.height - 3));
+        }
+
+        // Son de création de murs
+        if (window.game) {
+            window.game.playSound('spawn');
         }
 
         // Créer les 3 cases du mur
@@ -2507,6 +2527,9 @@ class AquaticBoss extends Enemy {
             if (bubble.timer >= bubble.duration) {
                 // La bulle explose
                 if (window.game) {
+                    // Son d'explosion de bulle
+                    window.game.playSound('bubblePop');
+
                     const player = window.game.player;
                     const distance = Math.abs(player.x - bubble.x) + Math.abs(player.y - bubble.y);
 
@@ -2571,6 +2594,8 @@ class AquaticBoss extends Enemy {
         }
 
         if (window.game) {
+            // Son de vague
+            window.game.playSound('waveSpell');
             window.game.addLog('🌊 Le boss lance une vague!', 'damage');
         }
     }
@@ -2856,6 +2881,9 @@ class FuturisticBoss extends Enemy {
             if (bomb.timer >= bomb.duration) {
                 // La bombe explose
                 if (window.game) {
+                    // Son d'explosion de bombe
+                    window.game.playSound('bomb');
+
                     const player = window.game.player;
                     const distance = Math.abs(player.x - bomb.x) + Math.abs(player.y - bomb.y);
 
@@ -2901,6 +2929,8 @@ class FuturisticBoss extends Enemy {
         }
 
         if (window.game) {
+            // Son de laser
+            window.game.playSound('laser');
             window.game.addLog('⚡ Le boss tire des lasers!', 'damage');
         }
     }
@@ -2937,6 +2967,8 @@ class FuturisticBoss extends Enemy {
                 this.shieldActive = true;
                 this.shieldTimer = this.shieldDuration;
                 if (window.game) {
+                    // Son de bouclier activé (joué en boucle tant que le bouclier est actif)
+                    window.game.playSound('shield');
                     window.game.addLog('🛡️ Le boss active son bouclier!', 'warning');
                 }
             }
@@ -2961,6 +2993,9 @@ class FuturisticBoss extends Enemy {
 
     spawnDrones() {
         if (!window.game || !window.game.dungeon) return;
+
+        // Son d'apparition des drones
+        window.game.playSound('spawn');
 
         const bossRoom = window.game.dungeon.bossRoom;
         if (!bossRoom) return;
@@ -3039,6 +3074,7 @@ class FuturisticBoss extends Enemy {
         if (this.shieldActive) {
             if (window.game) {
                 window.game.addFloatingText(this.x, this.y, 'BLOQUÉ! 🛡️', '#4a90e2');
+                window.game.playSound('shieldReflect');
             }
             return;
         }
@@ -3176,7 +3212,24 @@ class Game {
             stepOnGrass: new Audio('./sound_design/stepOnGrass.mp3'),
             stepOnRock: new Audio('./sound_design/stepOnRock.mp3'),
             stepOnSand: new Audio('./sound_design/stepOnSand.mp3'),
-            stepOnSteel: new Audio('./sound_design/steponSteal.mp3')
+            stepOnSteel: new Audio('./sound_design/steponSteal.mp3'),
+
+            // Sons d'attaque
+            arrow: new Audio('./sound_design/arrow.mp3'),
+            hit: new Audio('./sound_design/hit.mp3'),
+            swordHit: new Audio('./sound_design/sword_hit.mp3'),
+            magicSpell: new Audio('./sound_design/magic_spell.mp3'),
+
+            // Sons des boss
+            liane: new Audio('./sound_design/liane.mp3'),
+            teleport: new Audio('./sound_design/teleport.mp3'),
+            spawn: new Audio('./sound_design/spawn.mp3'),
+            waveSpell: new Audio('./sound_design/wave_spell.mp3'),
+            bubblePop: new Audio('./sound_design/bubble_pop.mp3'),
+            laser: new Audio('./sound_design/laser.mp3'),
+            bomb: new Audio('./sound_design/bomb.mp3'),
+            shield: new Audio('./sound_design/shield.mp3'),
+            shieldReflect: new Audio('./sound_design/shield_reflect.mp3')
         };
 
         // Configuration des volumes
@@ -4324,6 +4377,10 @@ class Game {
                             targetX, targetY,
                             'arrow'
                         );
+                        // Jouer le son de flèche
+                        if (attackNum === 0 || delay > 0) {
+                            setTimeout(() => this.playSound('arrow'), delay * 1000);
+                        }
                     } else if (this.player.classType === 'mage') {
                         // Animation de boule magique
                         animation = new ProjectileAnimation(
@@ -4332,6 +4389,10 @@ class Game {
                             'magic',
                             10 // Plus lent que la flèche
                         );
+                        // Jouer le son de sort magique
+                        if (attackNum === 0 || delay > 0) {
+                            setTimeout(() => this.playSound('magicSpell'), delay * 1000);
+                        }
                     } else if (this.player.classType === 'knight') {
                         // Animation de coup d'épée
                         animation = new MeleeAnimation(
@@ -4339,6 +4400,10 @@ class Game {
                             targetX, targetY,
                             'knight'
                         );
+                        // Jouer le son d'épée
+                        if (attackNum === 0 || delay > 0) {
+                            setTimeout(() => this.playSound('swordHit'), delay * 1000);
+                        }
                     } else if (this.player.classType === 'tank') {
                         // Animation de coup de bouclier
                         animation = new MeleeAnimation(
@@ -4346,6 +4411,10 @@ class Game {
                             targetX, targetY,
                             'tank'
                         );
+                        // Jouer le son de coup de bouclier
+                        if (attackNum === 0 || delay > 0) {
+                            setTimeout(() => this.playSound('hit'), delay * 1000);
+                        }
                     }
 
                     // Attacher la callback de dégâts à l'animation
@@ -5617,14 +5686,17 @@ class Game {
                 if ((enemy.combatType === 'melee' || enemy.combatType === 'tank' || enemy.combatType === 'small') && distance <= 1) {
                     const damageValue = enemy.attack();
                     const enemyTypeLabel = enemy.combatType === 'tank' ? 'tank' : (enemy.combatType === 'small' ? 'rapide' : 'mêlée');
-                    
+
+                    // Jouer le son d'attaque corps à corps
+                    this.playSound('swordHit');
+
                     // Animation de coup de mêlée
                     const meleeAnim = new MeleeAnimation(
                         enemy.x, enemy.y,
                         this.player.x, this.player.y,
                         'knight'
                     );
-                    
+
                     // Appliquer les dégâts quand l'animation touche
                     meleeAnim.onComplete = () => {
                         const killed = this.player.takeDamage(damageValue);
@@ -5632,13 +5704,16 @@ class Game {
                         this.addFloatingText(this.player.x, this.player.y, `-${damageValue}`, '#ff4757');
                         if (killed) this.gameOver();
                     };
-                    
+
                     this.animations.push(meleeAnim);
                 } else if (enemy.combatType === 'ranged' && distance <= enemy.range && distance > 1) {
                     // Attaque à distance - vérifier la ligne de vue
                     if (this.hasLineOfSight(enemy.x, enemy.y, this.player.x, this.player.y, false)) {
                         const damageValue = enemy.attack();
-                        
+
+                        // Jouer le son de sort magique
+                        this.playSound('magicSpell');
+
                         // Animation de projectile ennemi
                         const projectileAnim = new ProjectileAnimation(
                             enemy.x, enemy.y,
@@ -5646,7 +5721,7 @@ class Game {
                             'magic',
                             8
                         );
-                        
+
                         // Appliquer les dégâts quand le projectile touche
                         projectileAnim.onComplete = () => {
                             const killed = this.player.takeDamage(damageValue);
@@ -5654,7 +5729,7 @@ class Game {
                             this.addFloatingText(this.player.x, this.player.y, `-${damageValue}`, '#ff4757');
                             if (killed) this.gameOver();
                         };
-                        
+
                         this.animations.push(projectileAnim);
                     }
                 }
@@ -6599,6 +6674,8 @@ class Game {
         if (playerDist <= 1.5 && !boss.isInvulnerable) {
             const contactDamage = boss.getContactDamage();
             if (contactDamage > 0) {
+                // Son d'attaque corps à corps
+                this.playSound('swordHit');
                 const killed = this.player.takeDamage(contactDamage);
                 this.addFloatingText(this.player.x, this.player.y, `-${contactDamage} 👊`, '#ff4757');
                 if (killed) this.gameOver();
@@ -6609,13 +6686,16 @@ class Game {
         if (boss.phase === 1) {
             const projectile = boss.fireProjectile(this.player.x, this.player.y);
             if (projectile) {
+                // Son de projectile magique
+                this.playSound('magicSpell');
+
                 const projectileAnim = new ProjectileAnimation(
                     projectile.startX, projectile.startY,
                     projectile.endX, projectile.endY,
                     'magic',
                     6
                 );
-                
+
                 projectileAnim.onComplete = () => {
                     // Les dégâts ne sont appliqués qu'à la fin de l'animation
                     const killed = this.player.takeDamage(projectile.damage);
@@ -6623,15 +6703,17 @@ class Game {
                     this.addLog(`🔮 Projectile du boss: -${projectile.damage} HP`, 'damage');
                     if (killed) this.gameOver();
                 };
-                
+
                 this.animations.push(projectileAnim);
             }
         }
-        
+
         // Phase 2: Lianes
         if (boss.phase === 2) {
             const vines = boss.fireVines();
             if (vines.length > 0) {
+                // Son de lianes
+                this.playSound('liane');
                 this.addLog('🌿 Le boss lance des lianes!', 'damage');
             }
             
@@ -6660,6 +6742,8 @@ class Game {
         if (playerDist <= 1.5 && boss.contactDamageTimer >= 0.8 && !boss.isInvulnerable) {
             boss.contactDamageTimer = 0;
             const contactDamage = Math.floor(boss.damage * 0.5); // Dégâts réduits car le boss a d'autres attaques
+            // Son de coup
+            this.playSound('hit');
             const killed = this.player.takeDamage(contactDamage);
             this.addFloatingText(this.player.x, this.player.y, `-${contactDamage} 👊`, '#ff4757');
             if (killed) this.gameOver();
