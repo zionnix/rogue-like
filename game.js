@@ -7008,12 +7008,15 @@ class Game {
                 const gridX = Math.floor(this.camera.x + x);
                 const gridY = Math.floor(this.camera.y + y);
                 
-                if (gridX >= 0 && gridX < CONFIG.GRID_SIZE && 
+                if (gridX >= 0 && gridX < CONFIG.GRID_SIZE &&
                     gridY >= 0 && gridY < CONFIG.GRID_SIZE) {
-                    
+
                     const cell = this.dungeon.grid[gridY][gridX];
-                    const screenX = x * CONFIG.CELL_SIZE;
-                    const screenY = y * CONFIG.CELL_SIZE;
+                    // Calculer la position à l'écran en tenant compte du décalage de la caméra
+                    const cameraOffsetX = (this.camera.x - Math.floor(this.camera.x)) * CONFIG.CELL_SIZE;
+                    const cameraOffsetY = (this.camera.y - Math.floor(this.camera.y)) * CONFIG.CELL_SIZE;
+                    const screenX = x * CONFIG.CELL_SIZE - cameraOffsetX;
+                    const screenY = y * CONFIG.CELL_SIZE - cameraOffsetY;
 
                     // Vérifier si on est dans une salle de soins
                     let isHealingRoom = false;
