@@ -220,6 +220,7 @@ const CONFIG = {
             id: 'double_shot',
             name: 'Tir Double',
             description: 'Tire 2 projectiles au lieu d\'1',
+            icon: '🏹🏹',
             rarity: 'COMMON',
             classRestriction: ['archer', 'mage'],
             maxLevel: 1
@@ -228,6 +229,7 @@ const CONFIG = {
             id: 'double_strike',
             name: 'Frappe Double',
             description: 'Frappe 2 fois rapidement',
+            icon: '⚔️⚔️',
             rarity: 'COMMON',
             classRestriction: ['knight', 'tank'],
             maxLevel: 1
@@ -236,6 +238,7 @@ const CONFIG = {
             id: 'attack_speed',
             name: 'Vitesse d\'Attaque',
             description: '-10% temps d\'attaque par niveau',
+            icon: '⚡',
             rarity: 'COMMON',
             maxLevel: 5
         },
@@ -243,6 +246,7 @@ const CONFIG = {
             id: 'damage_boost',
             name: 'Force',
             description: '+10% dégâts par niveau',
+            icon: '💪',
             rarity: 'COMMON',
             maxLevel: 10
         },
@@ -252,6 +256,7 @@ const CONFIG = {
             id: 'shield',
             name: 'Bouclier Magique',
             description: 'Bouclier 3s+1s/niv, cooldown 10s',
+            icon: '🛡️',
             rarity: 'RARE',
             maxLevel: 10
         },
@@ -259,6 +264,7 @@ const CONFIG = {
             id: 'critical',
             name: 'Coup Critique',
             description: '15% à 100% de chance, 1.5x dégâts',
+            icon: '💥',
             rarity: 'RARE',
             maxLevel: 10
         },
@@ -266,6 +272,7 @@ const CONFIG = {
             id: 'knockback',
             name: 'Repousser',
             description: 'Repousse de 1 à 10 cases',
+            icon: '👊',
             rarity: 'RARE',
             maxLevel: 10
         },
@@ -274,6 +281,7 @@ const CONFIG = {
             id: 'health_boost',
             name: 'Vitalité',
             description: '+50 PV max et actuels (max 10 niveaux)',
+            icon: '❤️',
             rarity: 'COMMON',
             maxLevel: 10
         },
@@ -283,6 +291,7 @@ const CONFIG = {
             id: 'fireball',
             name: 'Boules de Feu',
             description: '2+1/niv boules, brûlure 5dmg/s 3s',
+            icon: '🔥',
             rarity: 'EPIC',
             maxLevel: 8
         },
@@ -300,6 +309,7 @@ const CONFIG = {
             id: 'second_life',
             name: 'Seconde Vie',
             description: 'Revie avec 50% PV (unique)',
+            icon: '💛',
             rarity: 'LEGENDARY',
             maxLevel: 1
         }
@@ -4185,7 +4195,7 @@ class Game {
                 };
                 
                 // Déterminer le nombre d'attaques (double_shot ou double_strike)
-                const numAttacks = (this.player.classType === 'archer' && this.player.perkLevels.double_shot) ? 2 :
+                const numAttacks = ((this.player.classType === 'archer' || this.player.classType === 'mage') && this.player.perkLevels.double_shot) ? 2 :
                                   ((this.player.classType === 'knight' || this.player.classType === 'tank') &&
                                    this.player.perkLevels.double_strike) ? 2 : 1;
 
@@ -5857,22 +5867,14 @@ class Game {
             range: '🎯 Portée'
         };
         
-        // Afficher les upgrades actifs
+        // Afficher les upgrades actifs (sauf damage et health qui sont gérés par les perks)
         for (const [key, value] of Object.entries(this.player.upgrades)) {
-            if (value > 0) {
+            // Ignorer damage et health car ils sont gérés par les perks damage_boost et health_boost
+            if (value > 0 && key !== 'damage' && key !== 'health') {
                 let bonusText = '';
 
                 // Calculer et afficher le bonus selon le type
-                if (key === 'damage') {
-                    // +10% par niveau (afficher le bonus cumulé actuel)
-                    const classBaseDamage = CONFIG.CLASSES[this.player.classType].damage;
-                    const currentBonus = this.player.damage - classBaseDamage;
-                    bonusText = `+${currentBonus} dégâts (+10%/niv)`;
-                } else if (key === 'health') {
-                    // +50 PV par niveau
-                    const totalBonus = 50 * value;
-                    bonusText = `+${totalBonus} PV max`;
-                } else if (key === 'speed') {
+                if (key === 'speed') {
                     // -0.1s par niveau
                     const totalBonus = -0.1 * value;
                     bonusText = `${totalBonus}s cooldown`;
@@ -5884,6 +5886,7 @@ class Game {
                 const div = document.createElement('div');
                 div.className = 'upgrade-item';
                 div.setAttribute('data-tooltip', bonusText);
+
                 div.innerHTML = `
                     <span>${upgradeNames[key]}</span>
                     <span class="upgrade-level">Niv. ${value}</span>
@@ -5897,7 +5900,15 @@ class Game {
             for (const perk of this.player.perks) {
                 const div = document.createElement('div');
                 div.className = 'upgrade-item perk-item';
-                div.style.borderColor = CONFIG.RARITY[perk.rarity].color;
+
+                // Appliquer une couleur spécifique pour Force et Vitalité
+                if (perk.id === 'damage_boost') {
+                    div.style.borderColor = '#2ecc71'; // Vert pour Force
+                } else if (perk.id === 'health_boost') {
+                    div.style.borderColor = '#3498db'; // Bleu pour Vitalité
+                } else {
+                    div.style.borderColor = CONFIG.RARITY[perk.rarity].color;
+                }
 
                 let perkText = `${perk.icon} ${perk.name}`;
                 if (perk.level > 1) {
