@@ -4295,6 +4295,12 @@ class Game {
             return;
         }
 
+        // Pour les classes corps-à-corps (tank, knight), les attaques sont automatiques;
+        // empêcher le clic d'attaquer (mais laisser les clics sur les soigneurs)
+        if (this.player && (this.player.classType === 'knight' || this.player.classType === 'tank')) {
+            return;
+        }
+
         if (!this.player.canAttack()) return;
         
         // Vérifier la portée
@@ -7041,6 +7047,76 @@ class Game {
         this.player.update(deltaTime);
         this.player.updatePerks(deltaTime); // Mise à jour des perks
         this.updateMagicRingsCollision(); // Collision des anneaux magiques
+        // Attaque automatique pour Chevalier et Tank lorsqu'un ennemi est à portée
+        if (this.player && (this.player.classType === 'knight' || this.player.classType === 'tank')) {
+            // Ne rien faire si pas prêt à attaquer
+            if (this.player.canAttack()) {
+                // Trouver l'ennemi le plus proche dans la portée du joueur (généralement 1 case)
+                const maxRange = this.player.range === Infinity ? 100 : this.player.range;
+                let nearest = null;
+                let minDist = Infinity;
+                for (const enemy of this.enemies) {
+                    const d = Math.hypot(enemy.x - this.player.x, enemy.y - this.player.y);
+                    if (d <= maxRange + 0.001 && d < minDist) {
+                        // Vérifier la ligne de vue (pour cohérence)
+                        if (this.hasLineOfSight(this.player.x, this.player.y, enemy.x, enemy.y, false)) {
+                            nearest = enemy;
+                            minDist = d;
+                        }
+                    }
+                }
+
+                if (nearest) {
+                    // Déterminer le nombre d'attaques (double_strike)
+                    const numAttacks = ((this.player.classType === 'archer' || this.player.classType === 'mage') && this.player.perkLevels.double_shot) ? 2 :
+                                      ((this.player.classType === 'knight' || this.player.classType === 'tank') && this.player.perkLevels.double_strike) ? 2 : 1;
+
+                    for (let a = 0; a < numAttacks; a++) {
+                        const { damage, isCritical } = this.player.getCalculatedDamage();
+                        // Appliquer les dégâts
+                        const killed = nearest.takeDamage(damage);
+                        // Compter les dégâts
+                        if (this.player) this.player.totalDamageDealt += damage;
+
+                        // Afficher les dégâts
+                        if (isCritical) {
+                            this.addFloatingText(nearest.x, nearest.y, `-${damage} CRIT!`, '#ffcc00');
+                            this.createCriticalEffect(nearest.x, nearest.y);
+                        } else {
+                            this.addFloatingText(nearest.x, nearest.y, `-${damage}`, '#ff6b6b');
+                        }
+
+                        this.playSound('swordHit');
+
+                        // Knockback
+                        if (this.player.perkEffects.knockbackDistance > 0 && !killed) {
+                            this.applyKnockback(nearest, this.player.perkEffects.knockbackDistance);
+                        }
+
+                        if (killed) {
+                            // Retirer l'ennemi et donner XP
+                            this.enemies = this.enemies.filter(e => e !== nearest);
+                            this.player.gainXP(nearest.xpValue);
+                            const xpText = nearest.xpValue === 'level' ? 'LEVEL UP!' : `+${nearest.xpValue} XP`;
+                            this.addFloatingText(this.player.x, this.player.y, xpText, '#ffd93d');
+
+                            // Soin à la mort pour Knight et Tank
+                            if (this.player && (this.player.classType === 'knight' || this.player.classType === 'tank')) {
+                                const healAmount = Math.min(nearest.maxHealth, this.player.maxHealth - this.player.health);
+                                if (healAmount > 0) {
+                                    this.player.health = Math.min(this.player.maxHealth, this.player.health + healAmount);
+                                    this.addFloatingText(this.player.x, this.player.y, `+${healAmount} ❤`, '#00ff00');
+                                }
+                            }
+                        }
+                    }
+
+                    // Déclencher le cooldown de l'attaque
+                    this.player.attack();
+                }
+            }
+        }
+
         this.updateEnemies(deltaTime);
         this.updateBossLogic(deltaTime); // Mise à jour spécifique au boss
         this.updateAmbientSounds(deltaTime); // Mise à jour des sons d'ambiance
