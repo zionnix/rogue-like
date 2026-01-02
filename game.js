@@ -244,6 +244,14 @@ const CONFIG = {
             rarity: 'COMMON',
             maxLevel: 5
         },
+        MOVE_SPEED: {
+            id: 'move_speed',
+            name: 'Agilité',
+            description: '+10% vitesse de déplacement par niveau',
+            icon: '🏃',
+            rarity: 'COMMON',
+            maxLevel: 5
+        },
         DAMAGE_BOOST: {
             id: 'damage_boost',
             name: 'Force',
@@ -654,6 +662,8 @@ class Player extends Entity {
 
             // Bonus de stats
             attackSpeedBonus: 0,
+            // Bonus de vitesse de déplacement (fraction, ex: 0.1 = +10% vitesse)
+            moveSpeedBonus: 0,
             damageBonus: 0
         };
 
@@ -761,6 +771,12 @@ class Player extends Entity {
 
             case 'second_life':
                 this.perkEffects.hasSecondLife = true;
+                break;
+
+            case 'move_speed':
+                // +10% de vitesse de déplacement par niveau
+                // stocker comme fraction (0.1 = +10%)
+                this.perkEffects.moveSpeedBonus = Math.min(0.8, level * 0.1);
                 break;
         }
     }
@@ -4139,8 +4155,10 @@ class Game {
                 this.player.x = newX;
                 this.player.y = newY;
 
-                // Réinitialiser le cooldown de déplacement
-                this.movementCooldown = this.movementDelay;
+                // Réinitialiser le cooldown de déplacement (appliquer bonus de vitesse de déplacement)
+                const speedBonus = (this.player.perkEffects && this.player.perkEffects.moveSpeedBonus) ? this.player.perkEffects.moveSpeedBonus : 0;
+                const newDelay = Math.max(0.05, this.movementDelay * (1 - speedBonus));
+                this.movementCooldown = newDelay;
 
                 // Activer l'animation de marche
                 this.player.isWalking = true;
