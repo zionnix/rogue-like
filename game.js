@@ -5920,7 +5920,6 @@ class Game {
         document.getElementById('final-stats').innerHTML = `
             <p>Niveau atteint: ${this.currentLevel}</p>
             <p>Niveau du personnage: ${this.player.level}</p>
-            <p>Dégâts: ${this.player.damage}</p>
             <p>Dégâts totaux infligés: ${this.player.totalDamageDealt}</p>
             <p>Vie max: ${this.player.maxHealth}</p>
         `;
@@ -5936,7 +5935,6 @@ class Game {
         
         document.getElementById('victory-stats').innerHTML = `
             <p>Niveau du personnage: ${this.player.level}</p>
-            <p>Dégâts: ${this.player.damage}</p>
             <p>Dégâts totaux infligés: ${this.player.totalDamageDealt}</p>
             <p>Vie max: ${this.player.maxHealth}</p>
         `;
