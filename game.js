@@ -7678,17 +7678,19 @@ class Game {
         // Déterminer la couleur du curseur
         let fillColor, strokeColor;
 
-        if (!inRange) {
-            // Hors de portée : rouge
-            fillColor = 'rgba(255, 71, 87, 0.3)';
-            strokeColor = 'rgba(255, 71, 87, 0.8)';
-        } else {
-            // Dans la portée : vérifier la ligne de vue
-            const canShootThroughWalls = this.player.classType === 'mage';
-            const hasLOS = this.hasLineOfSight(this.player.x, this.player.y, targetX, targetY, canShootThroughWalls);
+        // Vérifier condition d'attaque possible: dans la portée, ligne de vue (sauf mage) et pas en cooldown
+        const canShootThroughWalls = this.player.classType === 'mage';
+        const hasLOS = inRange ? this.hasLineOfSight(this.player.x, this.player.y, targetX, targetY, canShootThroughWalls) : false;
+        const canPerformAttack = this.player.canAttack() && inRange && hasLOS;
 
-            fillColor = hasLOS ? 'rgba(46, 204, 113, 0.3)' : 'rgba(255, 71, 87, 0.3)';
-            strokeColor = hasLOS ? 'rgba(46, 204, 113, 0.8)' : 'rgba(255, 71, 87, 0.8)';
+        if (canPerformAttack) {
+            // Curseur mauve clair quand l'attaque est possible
+            fillColor = 'rgba(200, 150, 255, 0.35)';
+            strokeColor = 'rgba(200, 150, 255, 0.95)';
+        } else {
+            // Curseur noir quand on ne peut pas attaquer (hors portée / pas de LOS / cooldown)
+            fillColor = 'rgba(0, 0, 0, 0.6)';
+            strokeColor = 'rgba(0, 0, 0, 1)';
         }
 
         // Dessiner le cercle de visée (toujours visible)
