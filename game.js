@@ -28,6 +28,7 @@ const CONFIG = {
         },
         knight: {
             name: 'Chevalier',
+            description: 'Attaque automatiquement les ennemis proches ; récupère de la vie en tuant les adversaires.',
             health: 120,
             damage: 25,
             attackSpeed: 1,
@@ -36,6 +37,7 @@ const CONFIG = {
         },
         tank: {
             name: 'Bouclier',
+            description: 'Riposte automatiquement quand un ennemi approche ; absorbe une part de la vie des ennemis tués.',
             health: 180,
             damage: 40,
             attackSpeed: 1.5,
@@ -102,35 +104,35 @@ const CONFIG = {
         },
         knight: {
             1: [
-                "Par mon épée, je purifierai cette forêt de toute menace !",
+                "Mon épée frappe d'elle-même quand un ennemi s'approche ; chaque adversaire tombé me rend de la vigueur !",
                 "Ces arbres ont vu trop de mal. Il est temps d'y apporter la justice.",
                 "En avant ! Aucune créature ne résistera à ma lame.",
                 "La forêt mystique... Un bon terrain pour prouver ma valeur.",
                 "Mon honneur me guide. Ces ténèbres ne m'effraient pas."
             ],
             2: [
-                "Ces grottes puent le mal. Ma lame brillera dans l'obscurité !",
+                "Dans ces grottes, ma lame frappe automatiquement les ennemis proches et me rend la vie de ceux que je terrasse !",
                 "L'honneur d'un chevalier ne faiblit pas dans le noir.",
                 "Que ces cavernes tremblent ! J'arrive.",
                 "Même sans lumière, mon épée trouvera ses cibles.",
                 "Ces profondeurs seront purifiées par l'acier."
             ],
             3: [
-                "Le feu de ces terres n'est rien comparé au feu dans mon cœur !",
+                "Même dans ces terres de feu, mes frappes automatiques reprennent la vie de mes ennemis pour me renforcer !",
                 "La chaleur forge les meilleurs guerriers. Je suis prêt.",
                 "Ces flammes témoigneront de ma victoire !",
                 "Un vrai chevalier ne recule jamais, même face à l'enfer.",
                 "Que la lave consume mes ennemis avant ma lame !"
             ],
             4: [
-                "L'eau ralentit mes mouvements, mais pas ma détermination !",
+                "Sous l'eau, mes attaques automatiques frappent les ennemis proches ; je récupère une part de leur force en les tuant !",
                 "Ces profondeurs cachent peut-être Excalibur... ou sa réplique.",
                 "Un chevalier doit s'adapter. Je nagerai vers la victoire.",
                 "L'honneur ne coule pas. Je me battrai même sous l'eau.",
                 "Ces abysses apprendront à craindre la chevalerie !"
             ],
             5: [
-                "Quelle sorcellerie est-ce là ? Peu importe, l'acier vaincra toujours !",
+                "La technologie ou la magie, mon épée frappe d'elle-même et puise la vie des vaincus pour me renforcer !",
                 "Ce monde étrange ne changera pas mon code d'honneur.",
                 "Machines ou monstres, tous tomberont devant ma lame.",
                 "Le futur a peut-être oublié les chevaliers. Je vais leur rappeler.",
@@ -139,35 +141,35 @@ const CONFIG = {
         },
         tank: {
             1: [
-                "Cette forêt semble hostile... Parfait. Mon bouclier a soif d'action.",
+                "Mon bouclier riposte automatiquement aux agresseurs proches et absorbe leur vie pour me soigner.",
                 "Qu'ils viennent tous. Je suis un mur infranchissable.",
                 "Ces arbres cachent des dangers ? Mon bouclier les accueillera.",
                 "La forêt mystique ne brisera pas ma défense.",
                 "Je suis le rempart. Rien ne passera."
             ],
             2: [
-                "L'obscurité ? Mes ennemis ne me verront pas venir non plus.",
+                "Dans l'obscurité, mon bouclier attaque automatiquement les ennemis proches et me rend une part de leur essence vitale.",
                 "Ces grottes seront leur tombeau, pas le mien.",
                 "Mon bouclier résonne dans ces cavernes. Un avertissement.",
                 "Dans le noir, ma défense reste impénétrable.",
                 "Que les ténèbres m'engloutissent. Je ressortirai victorieux."
             ],
             3: [
-                "La chaleur fait fondre les faibles. Je suis forgé dans un feu plus fort.",
+                "La chaleur brûle, mais mon bouclier frappe automatiquement ; je reprends de la vie sur ceux que je brise.",
                 "Ces flammes ne feront que renforcer mon bouclier.",
                 "Un vrai défenseur ne craint pas le feu. Je l'embrasse.",
                 "La lave coule autour de moi. Je reste immobile comme la montagne.",
                 "Que ce brasier teste ma résistance !"
             ],
             4: [
-                "L'eau presse contre mon armure... Une nouvelle forme de résistance.",
+                "Sous l'eau, mon bouclier riposte automatiquement et siphonne la vie des ennemis pour me tenir debout.",
                 "Ces profondeurs ne m'écraseront pas. Je suis plus lourd qu'elles.",
                 "Sous l'eau, ma défense reste absolue.",
                 "Les créatures marines apprendront la dureté de l'acier.",
                 "Je coule vers le fond ? Non, je m'ancre pour combattre."
             ],
             5: [
-                "Ces lumières étranges... Mon bouclier reflète tout.",
+                "Ces lumières étranges... Mon bouclier riposte automatiquement, et les vaincus me rendent leur force.",
                 "La technologie contre l'acier ? L'acier gagne toujours.",
                 "Ce monde bizarre ne changera pas ma stratégie : tenir bon.",
                 "Machines ou bêtes, elles se briseront contre moi.",
