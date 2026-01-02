@@ -657,6 +657,8 @@ class Player extends Entity {
 
         // Effets de status
         this.statusEffects = []; // { type, duration, elapsed, data }
+        // Statistiques de combat
+        this.totalDamageDealt = 0; // Dégâts totaux infligés durant la partie
     }
     
     gainXP(amount) {
@@ -937,12 +939,14 @@ class Player extends Entity {
                 if (game.enemies.includes(nearestEnemy)) {
                     const fireballDamage = 20 * this.perkLevels.fireball;
                     const killed = nearestEnemy.takeDamage(fireballDamage);
+                    // Compter les dégâts infligés par le joueur (fireball automatique)
+                    this.totalDamageDealt += fireballDamage;
 
                     // Afficher les dégâts
                     if (window.game) window.game.addFloatingText(nearestEnemy.x, nearestEnemy.y, `-${fireballDamage} 🔥`, '#ff6b00');
 
                     // Appliquer l'effet de brûlure
-                    if (!killed) {
+                    if (killed) {
                         nearestEnemy.applyStatusEffect({
                             type: 'burn',
                             duration: 3,
@@ -4319,6 +4323,8 @@ class Game {
                     // Calculer les dégâts avec critical
                     const { damage, isCritical } = this.player.getCalculatedDamage();
                     const killed = target.takeDamage(damage);
+                    // Compter les dégâts infligés par le joueur
+                    if (this.player) this.player.totalDamageDealt += damage;
 
                     // Afficher les dégâts au-dessus de l'ennemi avec style critique
                     if (isCritical) {
@@ -4347,6 +4353,15 @@ class Game {
                                 this.showBossDefeatDialogue();
                             }, 500);
                         } else {
+                            // Soins à la mort pour Chevalier et Tank : récupère la vie du monstre (limitée par la vie max du joueur)
+                            if (this.player && (this.player.classType === 'knight' || this.player.classType === 'tank')) {
+                                const healAmount = Math.min(target.maxHealth, this.player.maxHealth - this.player.health);
+                                if (healAmount > 0) {
+                                    this.player.health = Math.min(this.player.maxHealth, this.player.health + healAmount);
+                                    this.addFloatingText(this.player.x, this.player.y, `+${healAmount} ❤`, '#00ff00');
+                                }
+                            }
+
                             // Ennemis normaux: donner l'XP immédiatement
                             this.enemies = this.enemies.filter(e => e !== target);
                             this.player.gainXP(target.xpValue);
@@ -5618,9 +5633,20 @@ class Game {
 
                         // Infliger les dégâts
                         const killed = enemy.takeDamage(ringDamage);
+                        // Compter les dégâts infligés par les anneaux
+                        if (this.player) this.player.totalDamageDealt += ringDamage;
                         this.addFloatingText(enemy.x, enemy.y, `-${ringDamage} 🔮`, '#9b59b6');
 
                         if (killed) {
+                            // Soins à la mort pour Chevalier et Tank
+                            if (this.player && (this.player.classType === 'knight' || this.player.classType === 'tank')) {
+                                const healAmount = Math.min(enemy.maxHealth, this.player.maxHealth - this.player.health);
+                                if (healAmount > 0) {
+                                    this.player.health = Math.min(this.player.maxHealth, this.player.health + healAmount);
+                                    this.addFloatingText(this.player.x, this.player.y, `+${healAmount} ❤`, '#00ff00');
+                                }
+                            }
+
                             this.enemies = this.enemies.filter(e => e !== enemy);
                             this.player.gainXP(enemy.xpValue);
                             this.addFloatingText(this.player.x, this.player.y, `+${enemy.xpValue} XP`, '#ffd93d');
@@ -5895,6 +5921,7 @@ class Game {
             <p>Niveau atteint: ${this.currentLevel}</p>
             <p>Niveau du personnage: ${this.player.level}</p>
             <p>Dégâts: ${this.player.damage}</p>
+            <p>Dégâts totaux infligés: ${this.player.totalDamageDealt}</p>
             <p>Vie max: ${this.player.maxHealth}</p>
         `;
     }
@@ -5910,6 +5937,7 @@ class Game {
         document.getElementById('victory-stats').innerHTML = `
             <p>Niveau du personnage: ${this.player.level}</p>
             <p>Dégâts: ${this.player.damage}</p>
+            <p>Dégâts totaux infligés: ${this.player.totalDamageDealt}</p>
             <p>Vie max: ${this.player.maxHealth}</p>
         `;
     }
@@ -7845,4 +7873,29 @@ window.gameInfo = function() {
         console.log(`Niveau: ${game.player.level}`);
         console.log(`Perks actifs:`, game.player.perks);
     }
+};
+
+/**
+ * Maximiser tous les perks (Cheat)
+ */
+window.maxAllPerks = function() {
+    if (!game || !game.player) {
+        console.error('Vous devez être en jeu');
+        return;
+    }
+
+    console.log('⚡ Maximisation de tous les perks...');
+
+    for (const key in CONFIG.PERKS) {
+        const perk = CONFIG.PERKS[key];
+        const currentLevel = game.player.perkLevels[perk.id] || 0;
+        
+        for (let i = currentLevel; i < perk.maxLevel; i++) {
+            game.player.addPerk(perk.id);
+        }
+    }
+
+    game.updateHUD();
+    console.log('✅ Tous les perks sont au niveau maximum!');
+    game.addLog('⚡ TOUS LES PERKS MAXIMISÉS!', 'info');
 };
