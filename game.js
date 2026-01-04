@@ -251,7 +251,8 @@ const CONFIG = {
             icon: '🏃',
             rarity: 'COMMON',
             maxLevel: 5
-        },
+        }, 
+        
         DAMAGE_BOOST: {
             id: 'damage_boost',
             name: 'Force',
