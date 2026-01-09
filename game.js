@@ -1,6 +1,6 @@
 // ===== CONFIGURATION DU JEU =====
 const CONFIG = {
-    GRID_SIZE: 80,
+    GRID_SIZE: 53,  // Réduit de 1/3 (80 → 53)
     CELL_SIZE: 48,
     SPRITE_SIZE: 80,  // Taille des sprites (personnages et ennemis)
     // Canvas et viewport seront calculés dynamiquement
