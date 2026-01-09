@@ -3198,7 +3198,7 @@ class Game {
             click: new Audio('./sound_design/click.mp3'),
 
             // Sons de progression
-            newLevel: new Audio('./sound_design/new_level.mp3'),
+            newLevel: new Audio('./sound_design/level_up.mp3'),
             newWorld: new Audio('./sound_design/level_up.mp3'),
 
             // Musiques de fond
@@ -3407,14 +3407,7 @@ class Game {
         this.bossSprites = {};
         this.bossTalkSprites = {};
 
-        // Boss Zone 1
-        const boss1 = new Image();
-        boss1.src = './pixel_art/boss/boss_1.png';
-        this.bossSprites[1] = boss1;
-
-        const bossTalk1 = new Image();
-        bossTalk1.src = './pixel_art/boss_talk/boss_1.png';
-        this.bossTalkSprites[1] = bossTalk1;
+        // Les sprites de boss sont désactivés pour éviter les erreurs de chargement
         
         // Zone 1 - Mélée
         const melee1 = new Image();
@@ -3448,14 +3441,7 @@ class Game {
         small1.src = './pixel_art/ennemi/zone1/crazy_gobelin.png';
         this.enemySprites[1].small.push(small1);
 
-        // Boss Zone 2
-        const boss2 = new Image();
-        boss2.src = './pixel_art/boss/boss_2.png';
-        this.bossSprites[2] = boss2;
 
-        const bossTalk2 = new Image();
-        bossTalk2.src = './pixel_art/boss_talk/boss_2.png';
-        this.bossTalkSprites[2] = bossTalk2;
 
         // Zone 2 - Mélée
         const melee2_1 = new Image();
@@ -3485,14 +3471,7 @@ class Game {
         small2_1.src = './pixel_art/ennemi/zone2/bat.png';
         this.enemySprites[2].small.push(small2_1);
 
-        // Boss Zone 3
-        const boss3 = new Image();
-        boss3.src = './pixel_art/boss/boss_3.png';
-        this.bossSprites[3] = boss3;
 
-        const bossTalk3 = new Image();
-        bossTalk3.src = './pixel_art/boss_talk/boss_3.png';
-        this.bossTalkSprites[3] = bossTalk3;
 
         // Zone 3 - Terres de Lave
         const melee3_1 = new Image();
@@ -3522,14 +3501,7 @@ class Game {
         small3_1.src = './pixel_art/ennemi/zone3/fast.png';
         this.enemySprites[3].small.push(small3_1);
 
-        // Boss Zone 4
-        const boss4 = new Image();
-        boss4.src = './pixel_art/boss/boss_4.png';
-        this.bossSprites[4] = boss4;
 
-        const bossTalk4 = new Image();
-        bossTalk4.src = './pixel_art/boss_talk/boss_4.png';
-        this.bossTalkSprites[4] = bossTalk4;
 
         // Zone 4 - Profondeurs Aquatiques
         const melee4_1 = new Image();
@@ -3559,14 +3531,7 @@ class Game {
         small4_1.src = './pixel_art/ennemi/zone4/fast.png';
         this.enemySprites[4].small.push(small4_1);
 
-        // Boss Zone 5
-        const boss5 = new Image();
-        boss5.src = './pixel_art/boss/boss_5.png';
-        this.bossSprites[5] = boss5;
 
-        const bossTalk5 = new Image();
-        bossTalk5.src = './pixel_art/boss_talk/boss_5.png';
-        this.bossTalkSprites[5] = bossTalk5;
 
         // Zone 5 - Cité Futuriste
         const melee5_1 = new Image();
