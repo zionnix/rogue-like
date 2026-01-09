@@ -3494,32 +3494,32 @@ class Game {
         bossTalk3.src = './pixel_art/boss_talk/boss_3.png';
         this.bossTalkSprites[3] = bossTalk3;
 
-        // Zone 3 - Terres de Lave (réutiliser sprites zone 1 comme base)
+        // Zone 3 - Terres de Lave
         const melee3_1 = new Image();
-        melee3_1.src = './pixel_art/ennemi/zone1/green_knif_men.png';
+        melee3_1.src = './pixel_art/ennemi/zone3/kngiht1.png';
         this.enemySprites[3].melee.push(melee3_1);
 
         const melee3_2 = new Image();
-        melee3_2.src = './pixel_art/ennemi/zone1/human_mad.png';
+        melee3_2.src = './pixel_art/ennemi/zone3/kngiht2.png';
         this.enemySprites[3].melee.push(melee3_2);
 
         // Zone 3 - Ranged
         const ranged3_1 = new Image();
-        ranged3_1.src = './pixel_art/ennemi/zone1/witch.png';
+        ranged3_1.src = './pixel_art/ennemi/zone3/magician1.png';
         this.enemySprites[3].ranged.push(ranged3_1);
 
         const ranged3_2 = new Image();
-        ranged3_2.src = './pixel_art/ennemi/zone1/gobelin_witch.png';
+        ranged3_2.src = './pixel_art/ennemi/zone3/magician2.png';
         this.enemySprites[3].ranged.push(ranged3_2);
 
         // Zone 3 - Tank
         const tank3_1 = new Image();
-        tank3_1.src = './pixel_art/ennemi/zone1/tank_monster.png';
+        tank3_1.src = './pixel_art/ennemi/zone3/tank.png';
         this.enemySprites[3].tank.push(tank3_1);
 
         // Zone 3 - Small
         const small3_1 = new Image();
-        small3_1.src = './pixel_art/ennemi/zone1/crazy_gobelin.png';
+        small3_1.src = './pixel_art/ennemi/zone3/fast.png';
         this.enemySprites[3].small.push(small3_1);
 
         // Boss Zone 4
@@ -3531,32 +3531,32 @@ class Game {
         bossTalk4.src = './pixel_art/boss_talk/boss_4.png';
         this.bossTalkSprites[4] = bossTalk4;
 
-        // Zone 4 - Profondeurs Aquatiques (réutiliser sprites zone 2)
+        // Zone 4 - Profondeurs Aquatiques
         const melee4_1 = new Image();
-        melee4_1.src = './pixel_art/ennemi/zone2/cc_gobelin2.png';
+        melee4_1.src = './pixel_art/ennemi/zone4/knight1.png';
         this.enemySprites[4].melee.push(melee4_1);
 
         const melee4_2 = new Image();
-        melee4_2.src = './pixel_art/ennemi/zone2/cc_goblin.png';
+        melee4_2.src = './pixel_art/ennemi/zone4/kngiht2.png';
         this.enemySprites[4].melee.push(melee4_2);
 
         // Zone 4 - Ranged
         const ranged4_1 = new Image();
-        ranged4_1.src = './pixel_art/ennemi/zone2/crystal_witch.png';
+        ranged4_1.src = './pixel_art/ennemi/zone4/magician1.png';
         this.enemySprites[4].ranged.push(ranged4_1);
 
         const ranged4_2 = new Image();
-        ranged4_2.src = './pixel_art/ennemi/zone2/witch_stone.png';
+        ranged4_2.src = './pixel_art/ennemi/zone4/magician2.png';
         this.enemySprites[4].ranged.push(ranged4_2);
 
         // Zone 4 - Tank
         const tank4_1 = new Image();
-        tank4_1.src = './pixel_art/ennemi/zone2/tank.png';
+        tank4_1.src = './pixel_art/ennemi/zone4/tank.png';
         this.enemySprites[4].tank.push(tank4_1);
 
         // Zone 4 - Small
         const small4_1 = new Image();
-        small4_1.src = './pixel_art/ennemi/zone2/bat.png';
+        small4_1.src = './pixel_art/ennemi/zone4/fast.png';
         this.enemySprites[4].small.push(small4_1);
 
         // Boss Zone 5
@@ -3568,32 +3568,32 @@ class Game {
         bossTalk5.src = './pixel_art/boss_talk/boss_5.png';
         this.bossTalkSprites[5] = bossTalk5;
 
-        // Zone 5 - Cité Futuriste (réutiliser sprites zone 1)
+        // Zone 5 - Cité Futuriste
         const melee5_1 = new Image();
-        melee5_1.src = './pixel_art/ennemi/zone1/green_knif_men.png';
+        melee5_1.src = './pixel_art/ennemi/zone5/cc_knight1.png';
         this.enemySprites[5].melee.push(melee5_1);
 
         const melee5_2 = new Image();
-        melee5_2.src = './pixel_art/ennemi/zone1/human_mad.png';
+        melee5_2.src = './pixel_art/ennemi/zone5/cc_knight2.png';
         this.enemySprites[5].melee.push(melee5_2);
 
         // Zone 5 - Ranged
         const ranged5_1 = new Image();
-        ranged5_1.src = './pixel_art/ennemi/zone1/witch.png';
+        ranged5_1.src = './pixel_art/ennemi/zone5/magician1.png';
         this.enemySprites[5].ranged.push(ranged5_1);
 
         const ranged5_2 = new Image();
-        ranged5_2.src = './pixel_art/ennemi/zone1/gobelin_witch.png';
+        ranged5_2.src = './pixel_art/ennemi/zone5/magician2.png';
         this.enemySprites[5].ranged.push(ranged5_2);
 
         // Zone 5 - Tank
         const tank5_1 = new Image();
-        tank5_1.src = './pixel_art/ennemi/zone1/tank_monster.png';
+        tank5_1.src = './pixel_art/ennemi/zone5/tank.png';
         this.enemySprites[5].tank.push(tank5_1);
 
         // Zone 5 - Small
         const small5_1 = new Image();
-        small5_1.src = './pixel_art/ennemi/zone1/crazy_gobelin.png';
+        small5_1.src = './pixel_art/ennemi/zone5/bot_volant.png';
         this.enemySprites[5].small.push(small5_1);
 
         this.setupEventListeners();
