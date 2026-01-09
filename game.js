@@ -1419,7 +1419,7 @@ class CavernBoss extends Enemy {
 
         // Phase 1: Stalactites (100% - 60%)
         this.stalactiteTimer = 0;
-        this.stalactiteInterval = 8; // Toutes les 8 secondes
+        this.stalactiteInterval = 7 + Math.random() * 23; // Entre 7 et 30 secondes
         this.activeStalactites = []; // { x, y, timer, duration, state: 'warning'/'falling' }
 
         // Phase 2: Obscurité et téléportation (60% - 20%)
@@ -1473,6 +1473,8 @@ class CavernBoss extends Enemy {
 
         if (this.stalactiteTimer >= this.stalactiteInterval) {
             this.stalactiteTimer = 0;
+            // Définir un nouvel intervalle aléatoire entre 7 et 30 secondes
+            this.stalactiteInterval = 7 + Math.random() * 23;
             this.dropStalactites();
         }
 
@@ -3408,7 +3410,12 @@ class Game {
         this.bossSprites = {};
         this.bossTalkSprites = {};
 
-        // Les sprites de boss sont désactivés pour éviter les erreurs de chargement
+        // Charger les sprites de boss
+        for (let i = 1; i <= 5; i++) {
+            const bossSprite = new Image();
+            bossSprite.src = `./pixel_art/boss/boss_${i}.png`;
+            this.bossSprites[i] = bossSprite;
+        }
         
         // Zone 1 - Mélée
         const melee1 = new Image();
