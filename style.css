@@ -794,10 +794,13 @@ body {
 }
 
 #credits-screen {
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
-  background: linear-gradient(180deg, #0a0e1a 0%, rgb(18.5, 25.9, 48.1) 50%, #0a0e1a 100%);
-  overflow: hidden;
+  background: radial-gradient(circle at 50% 50%, rgba(78, 205, 196, 0.1) 0%, transparent 50%), linear-gradient(180deg, #0a0e1a 0%, rgb(18.5, 25.9, 48.1) 100%);
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  padding: 2rem 0;
+  flex-direction: column;
 }
 
 .credits-container {
