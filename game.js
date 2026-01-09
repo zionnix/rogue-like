@@ -964,15 +964,16 @@ class Player extends Entity {
                     // Afficher les dégâts
                     if (window.game) window.game.addFloatingText(nearestEnemy.x, nearestEnemy.y, `-${fireballDamage} 🔥`, '#ff6b00');
 
-                    // Appliquer l'effet de brûlure
-                    if (killed) {
+                    // Appliquer l'effet de brûlure ou retirer l'ennemi
+                    if (!killed) {
+                        // L'ennemi a survécu, appliquer l'effet de brûlure
                         nearestEnemy.applyStatusEffect({
                             type: 'burn',
                             duration: 3,
                             data: { damagePerSecond: 5 }
                         });
                     } else {
-                        // Retirer l'ennemi mort
+                        // L'ennemi est mort, le retirer
                         game.enemies = game.enemies.filter(e => e !== nearestEnemy);
                         this.gainXP(nearestEnemy.xpValue);
                     }
