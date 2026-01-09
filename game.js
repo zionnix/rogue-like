@@ -294,7 +294,7 @@ const CONFIG = {
             description: '+50 PV max et actuels (max 10 niveaux)',
             icon: '❤️',
             rarity: 'COMMON',
-            maxLevel: 10
+            maxLevel: 100
         },
 
         // EPIC (15%)
